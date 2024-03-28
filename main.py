@@ -32,5 +32,4 @@ class Hulk:
         ]
 
         hulk = Hulk(lexer, 'eof', grammar_init())
-        tokens = hulk.build_ast()
 
