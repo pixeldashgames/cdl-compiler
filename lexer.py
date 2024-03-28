@@ -1,6 +1,6 @@
-from cmp.automata import State
+from utils.automata import State
 
-from cmp.utils import Token
+from utils.utils import Token
 
 
 class Lexer:
@@ -13,7 +13,7 @@ class Lexer:
         regexs = []
         for n, (token_type, regex) in enumerate(table):
 
-            states = State.from_nfa(Reguex(regex).automaton())
+            states = State.from_nfa(Regex(regex).automaton())
             for state in states:
                 if state.final:
                     state.tag = (n, token_type)
