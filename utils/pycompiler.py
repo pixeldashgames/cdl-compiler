@@ -510,3 +510,6 @@ class Item:
 
     def Center(self):
         return Item(self.production, self.pos)
+
+class SintacticException(Exception):
+    pass
