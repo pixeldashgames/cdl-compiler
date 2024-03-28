@@ -75,8 +75,8 @@ RangeNode(SymbolNode('a'), SymbolNode('z')).evaluate()
 G = Grammar()
 
 E = G.NonTerminal('E', True)
-T, F, A = G.NonTerminals(' T F A')
-pipe, star, opar, cpar, symbol, epsilon, osquare, csquare, minus, plus, question = G.Terminals('| * ( ) symbol ε [ ] - + ?')
+T, F, A = G.NonTerminals('T F A')
+pipe, star, opar, cpar, symbol, epsilon = G.Terminals('| * ( ) symbol ε')
 
 E %= E + pipe + T, lambda s: UnionNode(s[1], s[3])
 E %= T, lambda s: s[1]
@@ -108,16 +108,7 @@ def regex_tokenizer(text, G, skip_whitespaces=True):
             tokens.append(Token(")", cpar))
         elif char == "ε" :
             tokens.append(Token("ε", epsilon))
-        elif char == "[" :
-            tokens.append(Token("[", osquare))
-        elif char == "]" :
-            tokens.append(Token("]", csquare))
-        elif char == "-" :
-            tokens.append(Token("-", minus))
-        elif char == "+" :
-            tokens.append(Token("+", plus))
-        elif char == "?" :
-            tokens.append(Token("?", question))
+        
         else :
             tokens.append(Token(char, symbol))
     
