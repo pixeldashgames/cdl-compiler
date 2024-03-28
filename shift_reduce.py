@@ -1,8 +1,4 @@
-from utils.automata import State
-from utils.pycompiler import (Grammar, Item, SintacticException)
-from utils.utils import (ContainerSet, EOF)
-
-from pandas import DataFrame
+from utils.pycompiler import (Grammar, SintacticException)
 
 
 class ShiftReduceParser:
