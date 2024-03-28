@@ -20,9 +20,6 @@ class Hulk:
         nonzero_digits = '|'.join(str(n) for n in range(1, 10))
         letters = '|'.join(chr(n) for n in range(ord('a'), ord('z') + 1))
 
-        print('Non-zero digits:', nonzero_digits)
-        print('Letters:', letters)
-
         lexer = [
             ('num', f'({nonzero_digits})(0|{nonzero_digits})*'),
             ('for', 'for'),

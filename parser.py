@@ -65,10 +65,25 @@ class LR1Parser(ShiftReduceParser):
         for node in automaton:
             idx = node.idx
             for item in node.state:
-                # Your code here!!!
-                # - Fill `self.Action` and `self.Goto` according to `item`)
-                # - Feel free to use `self._register(...)`)
-                pass
+                if item.IsReduceItem:
+                    prod = item.production
+                    if prod.Left == g.startSymbol:
+                        self.add(self.action, (idx, g.EOF), ("OK", None))
+                    else:
+                        for lookahead in item.lookaheads:
+                            self.add(self.action, (idx, lookahead), ("REDUCE", prod))
+                else:
+                    next_symbol = item.NextSymbol
+                    if next_symbol.IsTerminal:
+                        self.add(self.action, (idx, next_symbol),
+                                 ("SHIFT", node[next_symbol.Name][0].idx))
+                    else:
+                        self.add(self.goto, (idx, next_symbol), node[next_symbol.Name][0].idx)
+
+    @staticmethod
+    def add(table, key, value):
+        assert key not in table or table[key] == value, f'Conflict {key} {table[key]} {value}'
+        table[key] = value
 
     @staticmethod
     def _register(table, key, value):
