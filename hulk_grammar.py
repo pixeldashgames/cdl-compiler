@@ -11,18 +11,21 @@ abst_param_list, empty_param_list = HG.NonTerminal('<abst-param-list> <empty-par
 abst_arg_list, empty_arg_list = HG.NonTerminal('<abst-arg-list> <empty-arg-list>')
 param, arith, term, factor, atom, boolean = HG.NonTerminals('<parameter> <arith> <term> <factor> <atom>')
 boolean, b_or, b_and, b_not, b_rel = HG.NonTerminals('<boolean> <ors> <ands> <nots> <relation>')
+cond, loop = HG.NonTerminal('<conditional> <loop>')
 func_call, def_meth, def_attr = HG.NonTerminal('<func-call> <def_meth> <def-attr>')
 feature_list, abstract_feature_list, empty_feature_list= HG.NonTerminal('<feature-list> <abstract-feature-list> <empty-feature-list>')
-asig_list, asig= HG.NonTerminals('<asig-list> <asig>')
+asig_list, asig, des_asig= HG.NonTerminals('<asig-list> <asig> <destructive-asig>')
 
 # Terminales
 
 semi, colon, comma, dot, opar, cpar, ocur, ccur = HG.Terminals('; : , . ( ) { }')
-equal, plus, minus, star, div, rarrow = HG.Terminals('= + - * / =>')
-idx, let, new, fun, num, typex, inher, inx  = HG.Terminals('id let new function number type inherits in')
+equal, plus, minus, star, div, congr, conct, dconct, rarrow, dequal = HG.Terminals('= + - * / % @ @@ => :=')
+idx, let, new, fun, num, string, typex, inher, inx  = HG.Terminals('id let new function number string type inherits in')
 true, false = HG.Terminals('true, false')
 minor, mayor, eminor, emayor, same, dif = HG.Terminals('< > <= >= == !=')
 orx, andx, notx = HG.Terminals('| & !')
+ifx, elesex, elifx = HG.Terminals('if else elif')
+whilex, forx = HG.Terminals('while for')
 
 
 # Producciones
@@ -81,6 +84,20 @@ expr %= let + asig_list + inx + expr + semi
 expr %= let + asig_list + inx + ocur + abst_expr_list + ccur
 expr %= arith
 expr %= boolean
+expr %= cond
+expr %= loop
+
+cond %= ifx + opar + boolean + cpar + colon + expr + semi
+cond %= ifx + opar + boolean + cpar + colon + ocur + abst_expr_list + ccur
+cond %= elifx + opar + boolean + cpar + colon + expr + semi
+cond %= elifx + opar + boolean + cpar + colon + ocur + abst_expr_list + ccur
+cond %= elifx + colon + expr + semi
+cond %= elifx + colon + ocur + abst_expr_list + ccur
+
+loop %= whilex + opar + boolean + cpar + expr + semi
+loop %= whilex + opar + boolean + cpar + ocur + abst_expr_list + ccur
+loop %= forx + opar + idx + inx + expr + cpar + expr + semi
+loop %= forx + opar + idx + inx + expr + cpar + ocur + abst_expr_list + ccur
 
 asig_list %= asig
 asig_list %= asig + comma + asig_list
@@ -94,6 +111,7 @@ arith %= term
 
 term %= term + star + factor
 term %= term + div + factor
+term %= term + congr + factor
 term %= factor
 
 factor %= atom
@@ -118,13 +136,19 @@ b_not %= atom
 b_not %= opar + boolean + cpar
 
 atom %= num
+atom %= string
 atom %= idx
 atom %= func_call
 atom %= new + idx + opar + cpar
 atom %= true
 atom %= false
+atom %= des_asig
+atom %= string + conct + expr
+atom %= string + dconct + expr
 
 func_call %= atom + dot + idx + opar + abst_arg_list + cpar
+
+des_asig %= idx + dequal + expr
 
 abst_arg_list %= arg_list
 abst_arg_list %= empty_arg_list
