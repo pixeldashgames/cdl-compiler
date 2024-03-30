@@ -53,7 +53,8 @@ class State:
     def to_deterministic(self, formatter=lambda x: str(x)):
         closure = self.epsilon_closure
         start = State(tuple(closure), any(s.final for s in closure), formatter)
-
+        start.tag = [s.tag for s in closure if s.tag != None]
+        
         closures = [ closure ]
         states = [ start ]
         pending = [ start ]
@@ -68,6 +69,7 @@ class State:
 
                 if closure not in closures:
                     new_state = State(tuple(closure), any(s.final for s in closure), formatter)
+                    new_state.tag = [s.tag for s in closure if s.tag != None]
                     closures.append(closure)
                     states.append(new_state)
                     pending.append(new_state)

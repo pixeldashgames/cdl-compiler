@@ -1,9 +1,6 @@
-from utils.automata import State
-from utils.pycompiler import (Grammar, Item, SintacticException)
-from utils.utils import (ContainerSet, EOF)
-
-from pandas import DataFrame
-
+from utils.pycompiler import (Grammar, SintacticException)
+from typing import List
+from utils.utils import Token
 
 class ShiftReduceParser:
     SHIFT = 'SHIFT'
@@ -20,12 +17,7 @@ class ShiftReduceParser:
     def _build_parsing_table(self):
         raise NotImplementedError()
 
-    @staticmethod
-    def _register(table, key, value):
-        assert key not in table or table[key] == value, 'Shift-Reduce or Reduce-Reduce conflict!!!'
-        table[key] = value
-
-    def __call__(self, w):
+    def __call__(self, w: List[Token]):
         stack = [0]
         cursor = 0
         output = []
