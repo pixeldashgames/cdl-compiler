@@ -3,22 +3,23 @@ from utils.automata import State
 from utils.utils import Token
 
 
+def _build_regexs(table):
+    regexs = []
+    for n, (token_type, regex) in enumerate(table):
+
+        states = State.from_nfa(Regex(regex).automaton())
+        for state in states:
+            if state.final:
+                state.tag = (n, token_type)
+        regexs.append(states)
+    return regexs
+
+
 class Lexer:
     def __init__(self, table, eof):
         self.eof = eof
-        self.regexs = self._build_regexs(table)
+        self.regexs = _build_regexs(table)
         self.automaton = self._build_automaton()
-
-    def _build_regexs(self, table):
-        regexs = []
-        for n, (token_type, regex) in enumerate(table):
-
-            states = State.from_nfa(Regex(regex).automaton())
-            for state in states:
-                if state.final:
-                    state.tag = (n, token_type)
-            regexs.append(states)
-        return regexs
 
     def _build_automaton(self):
         start = State('start')
