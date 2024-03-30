@@ -1,15 +1,8 @@
 from utils.utils import ContainerSet
 from utils.pycompiler import Item
 
-def compute_local_firsts(firsts, alpha):
-    """
 
-    Computes the local firsts for a given alpha
-
-    :param firsts:
-    :param alpha:
-    :return:
-    """
+def compute_local_first(firsts, alpha):
     first_alpha = ContainerSet()
 
     try:
@@ -32,13 +25,6 @@ def compute_local_firsts(firsts, alpha):
 
 
 def compute_firsts(grammar):
-    """
-
-    Computes the firsts sets for the given grammar
-
-    :param grammar: Grammar
-    :return:
-    """
     firsts = {}
     change = True
 
@@ -62,7 +48,7 @@ def compute_firsts(grammar):
             except KeyError:
                 first_alpha = firsts[alpha] = ContainerSet()
 
-            local_first = compute_local_firsts(firsts, alpha)
+            local_first = compute_local_first(firsts, alpha)
 
             change |= first_alpha.hard_update(local_first)
             change |= first_left.hard_update(local_first)
@@ -70,58 +56,37 @@ def compute_firsts(grammar):
     return firsts
 
 
-def closure_for_lr1(items, firsts):
+def expand(item, firsts):
+    next_symbol = item.NextSymbol
+    if next_symbol is None or not next_symbol.IsNonTerminal:
+        return []
+
+    lookaheads = ContainerSet()
+    for prev in item.Preview():
+        lookaheads.update(compute_local_first(firsts, prev))
+
+    assert not lookaheads.contains_epsilon
+    productions = next_symbol.productions
+    return [Item(production, 0, lookaheads) for production in productions]
+
+
+def closure_lr1(items, firsts):
     closure = ContainerSet(*items)
 
     changed = True
-
     while changed:
         changed = False
 
         new_items = ContainerSet()
-        for item in closure:
-            new_items.extend(expand(item, firsts))
+        for x in closure:
+            new_items.update(ContainerSet(*expand(x, firsts)))
 
         changed = closure.update(new_items)
 
     return compress(closure)
 
 
-def goto_for_lr1(items, symbol, firsts=None, just_kernel=False):
-    assert (
-        just_kernel or firsts is not None
-    ), "`firsts` values must be provided if `just_kernel=False`"
-    items = frozenset(item.NextItem() for item in items if item.NextSymbol == symbol)
-    return items if just_kernel else closure_for_lr1(items, firsts)
-
-
-def expand(item, firsts):
-    """
-
-    Expands the given item
-
-    :param item:
-    :param firsts:
-    :return:
-    """
-    next_symbol = item.NextSymbol
-    if next_symbol is None or not next_symbol.IsNonTerminal:
-        return []
-
-    lookaheads = ContainerSet()
-    for preview in item.Preview():
-        lookaheads.hard_update(compute_local_firsts(firsts, preview))
-
-    assert not lookaheads.contains_epsilon
-    return [Item(prod, 0, lookaheads) for prod in next_symbol.productions]
-
-
 def compress(items):
-    '''
-    Compresses the given items
-    :param items:
-    :return:
-    '''
     centers = {}
 
     for item in items:
@@ -132,6 +97,12 @@ def compress(items):
             centers[center] = lookaheads = set()
         lookaheads.update(item.lookaheads)
 
-    return {
-        Item(x.production, x.pos, set(lookahead)) for x, lookahead in centers.items()
-    }
+    return {Item(x.production, x.pos, set(lookahead)) for x, lookahead in centers.items()}
+
+
+def goto_lr1(items, symbol, firsts=None, just_kernel=False):
+    assert just_kernel or firsts is not None, '`firsts` must be provided if `just_kernel=False`'
+    items = frozenset(item.NextItem() for item in items if item.NextSymbol == symbol)
+    return items if just_kernel else closure_lr1(items, firsts)
+
+

@@ -14,17 +14,17 @@ def grammar_init():
     return g
 
 
-def build_automaton_for_lr1_parser(grammar):
-    assert len(grammar.startSymbol.productions) == 1, "Grammar must be augmented"
+def build_lr1_automaton(G):
+    assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
 
-    firsts = compute_firsts(grammar)
-    firsts[grammar.EOF] = ContainerSet(grammar.EOF)
+    firsts = compute_firsts(G)
+    firsts[G.EOF] = ContainerSet(G.EOF)
 
-    start_production = grammar.startSymbol.productions[0]
-    start_item = Item(start_production, 0, lookaheads=(grammar.EOF,))
+    start_production = G.startSymbol.productions[0]
+    start_item = Item(start_production, 0, lookaheads=(G.EOF,))
     start = frozenset([start_item])
 
-    closure = closure_for_lr1(start, firsts)
+    closure = closure_lr1(start, firsts)
     automaton = State(frozenset(closure), True)
 
     pending = [start]
@@ -34,29 +34,34 @@ def build_automaton_for_lr1_parser(grammar):
         current = pending.pop()
         current_state = visited[current]
 
-        for symbol in grammar.terminals + grammar.nonTerminals:
-            items = current_state.state
-            kernel = goto_for_lr1(items, symbol, just_kernel=True)
+        for symbol in G.terminals + G.nonTerminals:
+            item = current_state.state
+            kernel = goto_lr1(item, symbol, just_kernel=True)
             if not kernel:
                 continue
             try:
                 next_state = visited[kernel]
             except KeyError:
-                closure = goto_for_lr1(items, symbol, firsts)
+                closure = goto_lr1(kernel, symbol, firsts)
                 next_state = visited[kernel] = State(frozenset(closure), True)
                 pending.append(kernel)
 
             current_state.add_transition(symbol.Name, next_state)
 
-    automaton.set_formatter(lambda x: "")
+    automaton.set_formatter(multiline_formatter)
     return automaton
 
 
 class LR1Parser(ShiftReduceParser):
     def _build_parsing_table(self):
-        g = self.G.AugmentedGrammar(True)
+        grammar = self.G.AugmentedGrammar(True)
 
-        automaton = build_automaton_for_lr1_parser(g)
+        if self.goto == {} or self.action == {}:
+            pass
+        else:
+            return
+
+        automaton = build_lr1_automaton(grammar)
         for i, node in enumerate(automaton):
             if self.verbose:
                 print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')
@@ -67,23 +72,18 @@ class LR1Parser(ShiftReduceParser):
             for item in node.state:
                 if item.IsReduceItem:
                     prod = item.production
-                    if prod.Left == g.startSymbol:
-                        self.add(self.action, (idx, g.EOF), ("OK", None))
+                    if prod.Left == grammar.startSymbol:
+                        self._register(self.action, (idx, grammar.EOF), (self.OK, None))
                     else:
                         for lookahead in item.lookaheads:
-                            self.add(self.action, (idx, lookahead), ("REDUCE", prod))
+                            self._register(self.action, (idx, lookahead), (self.REDUCE, prod))
                 else:
                     next_symbol = item.NextSymbol
                     if next_symbol.IsTerminal:
-                        self.add(self.action, (idx, next_symbol),
-                                 ("SHIFT", node[next_symbol.Name][0].idx))
+                        self._register(self.action, (idx, next_symbol),
+                                       (self.SHIFT, node[next_symbol.Name][0].idx))
                     else:
-                        self.add(self.goto, (idx, next_symbol), node[next_symbol.Name][0].idx)
-
-    @staticmethod
-    def add(table, key, value):
-        assert key not in table or table[key] == value, f'Conflict {key} {table[key]} {value}'
-        table[key] = value
+                        self._register(self.goto, (idx, next_symbol), node[next_symbol.Name][0].idx)
 
     @staticmethod
     def _register(table, key, value):
@@ -96,4 +96,4 @@ class Parser:
         self.grammar = grammar
 
     def __call__(self):
-        parser = Parser(self.grammar)
+        return Parser(self.grammar)
