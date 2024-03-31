@@ -71,6 +71,10 @@ class FunCallNode(ExpressionNode):
         self.id = idx
         self.args = args
 
+class ConditionalNode(ExpressionNode):
+    def __init__(self, conds):
+        self.conds = conds
+        
 class IfNode(ExpressionNode):
     def __init__(self, cond, expr):
         self.cond = cond
@@ -101,6 +105,11 @@ class AsNode(ExpressionNode):
         self.expr = expr
         self.type = typex
 
+class InstantiateNode(ExpressionNode):
+    def __init__(self, idx, args):
+        self.id = idx
+        self.args = args
+
 class ConstantNumNode(AtomicNode):
     pass
 
@@ -111,9 +120,6 @@ class BoolNode(AtomicNode):
     pass
 
 class VariableNode(AtomicNode):
-    pass
-
-class InstantiateNode(AtomicNode):
     pass
 
 class PlusNode(BinaryNode):
