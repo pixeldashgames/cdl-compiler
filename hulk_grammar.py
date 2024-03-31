@@ -22,7 +22,7 @@ if_cond, elif_cond, else_cond, elif_cond_list = HG.NonTerminals('<if-cond> <elif
 # Terminales
 
 semi, colon, comma, dot, opar, cpar, ocur, ccur = HG.Terminals('; : , . ( ) { }')
-equal, plus, minus, star, div, congr, conct, dconct, rarrow, dequal = HG.Terminals('= + - * / % @ @@ => :=')
+equal, plus, minus, star, div, congr, conct, dconct, rarrow, dequal, power = HG.Terminals('= + - * / % @ @@ => :=, ^')
 idx, let, new, fun, num, string, boolx, typex, inher, inx  = HG.Terminals('id let new function number string bool type inherits in')
 minor, mayor, eminor, emayor, same, dif = HG.Terminals('< > <= >= == !=')
 orx, andx, notx = HG.Terminals('| & !')
@@ -137,6 +137,7 @@ term %= term + congr + factor, lambda h,s: ast.CongruenceNode(s[1], s[3])
 term %= factor, lambda h,s: s[1]
 
 factor %= atom, lambda h,s: s[1]
+factor %= atom + power + factor, lambda h,s: ast.PowerNode(s[1], s[3])
 factor %= opar + arith + cpar, lambda h,s: s[2]
 
 boolean %= boolean + orx + b_or, lambda h,s: ast.OrNode(s[1], s[3])
