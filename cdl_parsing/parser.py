@@ -3,14 +3,14 @@ from utils.automata import State, multiline_formatter
 from pending.utils import *
 
 
-def build_lr1_automaton(G):
-    assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
+def build_LR1_automaton(grammar):
+    assert len(grammar.startSymbol.productions) == 1, "Grammar must be augmented"
 
-    firsts = compute_firsts(G)
-    firsts[G.EOF] = ContainerSet(G.EOF)
+    firsts = compute_firsts(grammar)
+    firsts[grammar.EOF] = ContainerSet(grammar.EOF)
 
-    start_production = G.startSymbol.productions[0]
-    start_item = Item(start_production, 0, lookaheads=(G.EOF,))
+    start_production = grammar.startSymbol.productions[0]
+    start_item = Item(start_production, 0, lookaheads=(grammar.EOF,))
     start = frozenset([start_item])
 
     closure = closure_lr1(start, firsts)
@@ -23,7 +23,7 @@ def build_lr1_automaton(G):
         current = pending.pop()
         current_state = visited[current]
 
-        for symbol in G.terminals + G.nonTerminals:
+        for symbol in grammar.terminals + grammar.nonTerminals:
             item = current_state.state
             kernel = goto_lr1(item, symbol, just_kernel=True)
             if not kernel:
@@ -31,7 +31,7 @@ def build_lr1_automaton(G):
             try:
                 next_state = visited[kernel]
             except KeyError:
-                closure = goto_lr1(kernel, symbol, firsts)
+                closure = goto_lr1(item, symbol, firsts)
                 next_state = visited[kernel] = State(frozenset(closure), True)
                 pending.append(kernel)
 
@@ -43,15 +43,17 @@ def build_lr1_automaton(G):
 
 class LR1Parser(ShiftReduceParser):
     def _build_parsing_table(self):
-        grammar = self.G.augmented_grammar(True)
+        aug_grammar = self.G.augmented_grammar(True)
 
         if self.goto == {} or self.action == {}:
             pass
         else:
             return
 
-        automaton = build_lr1_automaton(grammar)
+        automaton = build_LR1_automaton(aug_grammar)
         for i, node in enumerate(automaton):
+            if self.verbose:
+                print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')
             node.idx = i
 
         for node in automaton:
@@ -59,8 +61,8 @@ class LR1Parser(ShiftReduceParser):
             for item in node.state:
                 if item.is_reduce_item:
                     prod = item.production
-                    if prod.Left == grammar.startSymbol:
-                        self._register(self.action, (idx, grammar.EOF), (self.OK, None))
+                    if prod.Left == aug_grammar.startSymbol:
+                        self._register(self.action, (idx, aug_grammar.EOF), (self.OK, None))
                     else:
                         for lookahead in item.lookaheads:
                             self._register(self.action, (idx, lookahead), (self.REDUCE, prod))

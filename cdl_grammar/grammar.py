@@ -95,13 +95,13 @@ tokens = [quotes, opar, opar, scape, scape, scape, quotes, cpar, pipe, opar, sca
 
 
 regex = "\"((\\\\\\\")|(\\*))*\""
-print(regex)
-print(tokens)
 
 derivation, operations = parser(tokens)
 
-# print(derivation)
-
+print("derivation and operations created")
+new_tokens = []
+for x in tokens:
+    new_tokens.append(Token(x.Name, x, 0))
 tokens = [Token(x.Name, x, 0) for x in tokens]
 ast = evaluate_reverse_parse(derivation, operations, tokens)
 ast.evaluate()
