@@ -11,7 +11,7 @@ class ExpressionNode(Node):
     pass
 
 class TypeDeclarationNode(DeclarationNode):
-    def __init__(self, idx, params, features, parent=None, p_params = None):
+    def __init__(self, idx, params, features, p_params, parent=None):
         self.id = idx
         self.params = params
         self.parent = parent
