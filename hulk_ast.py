@@ -71,6 +71,10 @@ class FunCallNode(ExpressionNode):
         self.id = idx
         self.args = args
 
+class ConditionalNode(ExpressionNode):
+    def __init__(self, conds):
+        self.conds = conds
+        
 class IfNode(ExpressionNode):
     def __init__(self, cond, expr):
         self.cond = cond
@@ -101,6 +105,11 @@ class AsNode(ExpressionNode):
         self.expr = expr
         self.type = typex
 
+class InstantiateNode(ExpressionNode):
+    def __init__(self, idx, args):
+        self.id = idx
+        self.args = args
+
 class ConstantNumNode(AtomicNode):
     pass
 
@@ -113,55 +122,64 @@ class BoolNode(AtomicNode):
 class VariableNode(AtomicNode):
     pass
 
-class InstantiateNode(AtomicNode):
+class ArithmeticOperationNode(BinaryNode):
     pass
 
-class PlusNode(BinaryNode):
+class PlusNode(ArithmeticOperationNode):
     pass
 
-class MinusNode(BinaryNode):
+class MinusNode(ArithmeticOperationNode):
     pass
 
-class StarNode(BinaryNode):
+class StarNode(ArithmeticOperationNode):
     pass
 
-class DivNode(BinaryNode):
+class DivNode(ArithmeticOperationNode):
     pass
 
-class CongruenceNode(BinaryNode):
+class CongruenceNode(ArithmeticOperationNode):
     pass
 
-class ConcatenateNode(BinaryNode):
+class StringOperationNode(BinaryNode):
     pass
 
-class DoubleConcatenateNode(BinaryNode):
+class ConcatenateNode(StringOperationNode):
     pass
 
-class OrNode(BinaryNode):
+class DoubleConcatenateNode(StringOperationNode):
     pass
 
-class AndNode(BinaryNode):
+class BooleanOperationNode(BinaryNode):
+    pass
+
+class OrNode(BooleanOperationNode):
+    pass
+
+class AndNode(BooleanOperationNode):
     pass
 
 class NotNode(UnaryNode):
     pass
 
-class MinorNode(BinaryNode):
+class ComparisonOperationNode(BinaryNode):
     pass
 
-class MayorNode(BinaryNode):
+class MinorNode(ComparisonOperationNode):
     pass
 
-class EqMinorNode(BinaryNode):
+class MayorNode(ComparisonOperationNode):
     pass
 
-class EqMayorNode(BinaryNode):
+class EqMinorNode(ComparisonOperationNode):
     pass
 
-class EqualNode(BinaryNode):
+class EqMayorNode(ComparisonOperationNode):
     pass
 
-class DifferentNode(BinaryNode):
+class EqualNode(ComparisonOperationNode):
+    pass
+
+class DifferentNode(ComparisonOperationNode):
     pass
 
 class IsNode(BinaryNode):

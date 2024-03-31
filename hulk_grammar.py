@@ -17,6 +17,7 @@ cond, loop = HG.NonTerminals('<conditional> <loop>')
 func_call, meth_call, def_meth, def_attr = HG.NonTerminals('<func-call> <meth-call> <def_meth> <def-attr>')
 feature_list, abstract_feature_list, empty_feature_list= HG.NonTerminals('<feature-list> <abstract-feature-list> <empty-feature-list>')
 asig_list, asig, des_asig= HG.NonTerminals('<asig-list> <asig> <destructive-asig>')
+if_cond, elif_cond, else_cond, elif_cond_list = HG.NonTerminals('<if-cond> <elif-cond> <else-cond> <elif-cond-list>')
 
 # Terminales
 
@@ -43,7 +44,7 @@ entity_list %= ocur + abst_expr_list + ccur, lambda h,s: [s[2]]
 
 def_type %= typex + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[7])
 def_type %= typex + idx + opar + abst_param_list + cpar + inher + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[9], s[7] )
-def_type %= typex + idx +  opar + abst_param_list + cpar + inher + idx +  opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[7], s[9] )
+def_type %= typex + idx +  opar + abst_param_list + cpar + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[7], s[9] )
 
 abstract_feature_list %= feature_list, lambda h,s: s[1]
 abstract_feature_list %= empty_feature_list, lambda h,s: s[1]
@@ -98,12 +99,19 @@ expr %= expr + asx + idx, lambda h,s: ast.AsNode(s[1], s[3])
 atom %= expr + conct + expr, lambda h,s: ast.ConcatenateNode(s[1], s[3])
 atom %= expr + dconct + expr, lambda h,s: ast.DoubleConcatenateNode(s[1], s[3])
 
-cond %= ifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.IfNode(s[3], [s[5]])
-cond %= ifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.IfNode(s[3], s[6])
-cond %= elifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.ElifNode(s[3], [s[5]])
-cond %= elifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.ElifNode(s[3], s[6])
-cond %= elsex + expr + semi, lambda h,s: ast.ElseNode([s[2]])
-cond %= elsex + ocur + abst_expr_list + ccur, lambda h,s: ast.ElseNode(s[3])
+cond %= if_cond + elif_cond_list + else_cond, lambda h,s: ast.ConditionalNode([s[1]] + s[2] + [s[3]])
+cond %= if_cond + else_cond, lambda h,s: ast.ConditionalNode([s[1]] + [s[3]])
+cond %= if_cond, lambda h,s: ast.ConditionalNode([s[1]])
+
+elif_cond_list %= elif_cond + elif_cond_list, lambda h,s: [s[1]] + s[2]
+elif_cond_list %= elif_cond, lambda h,s: [s[1]]
+
+if_cond %= ifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.IfNode(s[3], [s[5]])
+if_cond %= ifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.IfNode(s[3], s[6])
+else_cond %= elsex + expr + semi, lambda h,s: ast.ElseNode([s[2]])
+else_cond %= elsex + ocur + abst_expr_list + ccur, lambda h,s: ast.ElseNode(s[3])
+elif_cond %= elifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.ElifNode(s[3], [s[5]])
+elif_cond %= elifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.ElifNode(s[3], s[6])
 
 loop %= whilex + opar + boolean + cpar + expr + semi, lambda h,s: ast.WhileNode(s[3], [s[5]])
 loop %= whilex + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.WhileNode(s[3], s[6])
@@ -153,7 +161,7 @@ atom %= boolx, lambda h,s: ast.BoolNode(s[1])
 atom %= idx, lambda h,s: ast.VariableNode(s[1])
 atom %= func_call, lambda h,s: s[1]
 atom %= meth_call, lambda h,s: s[1]
-atom %= new + idx + opar + cpar, lambda h,s: ast.InstantiateNode(s[2])
+atom %= new + idx + opar + abst_arg_list + cpar, lambda h,s: ast.InstantiateNode(s[2], s[4])
 atom %= des_asig, lambda h,s: s[1]
 
 func_call %= idx + opar + abst_arg_list + cpar, lambda h,s: ast.FunCallNode(s[1], s[3])

@@ -14,3 +14,9 @@ def get_builtin_functions() -> list[tuple[str, list[str], list[Type], Type]]:
         ("rand", [], [], [NumberType()]),
         ("range", ["start", "end"], [NumberType(), NumberType()], [IterableType()]),
     ]
+    
+def get_builtin_constants() -> dict[str, Type]:
+    return {
+        "PI":NumberType(),
+        "E":NumberType()
+    }
