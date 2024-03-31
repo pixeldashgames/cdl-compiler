@@ -1,12 +1,12 @@
 from lexer import Lexer
-from parser import Parser, grammar_init
+from parser import LR1Parser, grammar_init
 from utils.evaluation import evaluate_reverse_parse
 
 
 class Hulk:
     def __init__(self, lexer_table, lexer_eof, parser_grammar):
         self.lexer = Lexer(lexer_table, lexer_eof)
-        self.parser = Parser(parser_grammar)
+        self.parser = LR1Parser(parser_grammar)
 
     def build_ast(self, text, verbose=False):
         all_tokens = self.lexer(text)
