@@ -22,54 +22,38 @@ class ShiftReduceParser:
         stack = [0]
         cursor = 0
         output = []
-        operations = []
-        count = 1
+        actions = []
+
         while True:
             state = stack[-1]
             lookahead = w[cursor]
-            if self.verbose: print(stack, '<---||--->', w[cursor:], count)
-            count += 1
+            if self.verbose: print(stack, '<---||--->', w[cursor:])
 
-            lookahead = lookahead.token_type.Name
-            if (state, lookahead) not in self.action.keys():
-                desire = ''
-                for (state_d, lookahead_d) in self.action.keys():
-                    if state_d == state:
-                        desire += f"- '{lookahead_d}'\n"
+            try:
+                action, tag = self.action[state, lookahead]
+            except Exception as e:
+                # Follow the row state and give the terminals that have either shift or reduce
+                # actions
+                actions = {k[1] for k in self.action if k[0] == state}
+                raise Exception(
+                    f"PARSER ERROR: Invalid token on cursor {cursor} and lookahead {lookahead}, expected one of {actions}")
 
-                token = w[cursor]
-                err = f'No se puede parsear la cadena. No se esperaba un token {lookahead} '
-                err += f'en la linea {token.row} y columna {token.col}.\n'
-                if len(desire) > 0:
-                    err += 'Se esperaba:\n'
-                    err += desire
-                raise SintacticException(err)
-
-            action, tag = self.action[state, lookahead]
-
-            # SHIFT
             if action == ShiftReduceParser.SHIFT:
                 stack.append(lookahead)
                 stack.append(tag)
-                operations.append(ShiftReduceParser.SHIFT)
                 cursor += 1
-
-            # REDUCE
             elif action == ShiftReduceParser.REDUCE:
-                left, right = production = self.G.Productions[tag]
-                count_delete = 2 * len(right)
-                for i in range(count_delete):
+                production = tag
+                left, right = production
+                for _ in range(2 * len(right)):
                     stack.pop()
-                new_state = self.goto[stack[-1], left.Name]
-                stack.append(left.Name)
-                stack.append(new_state)
+                state = stack[-1]
+                stack.append(left)
+                stack.append(self.goto[state, left])
                 output.append(production)
-                operations.append(ShiftReduceParser.REDUCE)
-
-            # ACCEPT
             elif action == ShiftReduceParser.OK:
-                return output, operations
+                break
 
-            # INVALID
-            else:
-                raise Exception('Invalid')
+            actions.append(action)
+
+        return output, actions
