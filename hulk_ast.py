@@ -134,6 +134,9 @@ class MinusNode(ArithmeticOperationNode):
 class StarNode(ArithmeticOperationNode):
     pass
 
+class PowerNode(ArithmeticOperationNode):
+    pass
+
 class DivNode(ArithmeticOperationNode):
     pass
 

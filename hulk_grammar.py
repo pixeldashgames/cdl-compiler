@@ -24,7 +24,7 @@ if_cond, elif_cond, else_cond, elif_cond_list = HG.non_terminals('<if-cond> <eli
 # Terminales
 
 semi, colon, comma, dot, opar, cpar, ocur, ccur = HG.Terminals('; : , . ( ) { }')
-equal, plus, minus, star, div, congr, conct, dconct, rarrow, dequal = HG.Terminals('= + - * / % @ @@ => :=')
+equal, plus, minus, star, div, congr, conct, dconct, rarrow, dequal, power = HG.Terminals('= + - * / % @ @@ => :=, ^')
 idx, let, new, fun, num, string, boolx, typex, inher, inx = HG.Terminals(
     'id let new function number string bool type inherits in')
 minor, mayor, eminor, emayor, same, dif = HG.Terminals('< > <= >= == !=')
@@ -44,22 +44,14 @@ entity_list %= def_func + entity_list, lambda h, s: [s[1]] + s[2]
 entity_list %= expr + semi, lambda h, s: [s[1]]
 entity_list %= ocur + abst_expr_list + ccur, lambda h, s: [s[2]]
 
-def_type %= typex + idx + opar + param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,
-                                                                                                 s: ast.TypeDeclarationNode(
-    s[2], s[4], s[7], [])
+def_type %= (typex + idx + opar + param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s:ast.TypeDeclarationNode(
+    s[2], s[4], s[7], []))
 def_type %= typex + idx + ocur + abstract_feature_list + ccur, lambda h, s: ast.TypeDeclarationNode(s[2], [], s[4], [])
-def_type %= typex + idx + opar + param_list + cpar + inher + idx + ocur + abstract_feature_list + ccur, lambda h,
-                                                                                                               s: ast.TypeDeclarationNode(
+def_type %= typex + idx + opar + param_list + cpar + inher + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(
     s[2], s[4], s[9], [], s[7])
-def_type %= typex + idx + inher + idx + ocur + abstract_feature_list + ccur, lambda h, s: ast.TypeDeclarationNode(s[2],
-                                                                                                                  [],
-                                                                                                                  s[6],
-                                                                                                                  [],
-                                                                                                                  s[4])
-def_type %= typex + idx + opar + param_list + cpar + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda \
-        h, s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[9], s[7])
-def_type %= typex + idx + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,
-                                                                                                                    s: ast.TypeDeclarationNode(
+def_type %= typex + idx + inher + idx + ocur + abstract_feature_list + ccur, lambda h, s: ast.TypeDeclarationNode(s[2],[],s[6],[],s[4])
+def_type %= typex + idx + opar + param_list + cpar + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h, s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[9], s[7])
+def_type %= typex + idx + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(
     s[2], [], s[9], s[6], s[4])
 
 abstract_feature_list %= feature_list, lambda h, s: s[1]
@@ -79,25 +71,17 @@ def_meth %= idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h
                                                                                                              [s[6]])
 def_meth %= idx + opar + abst_param_list + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.MethDeclarationNode(
     s[1], s[3], s[6])
-def_meth %= idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,
-                                                                                             s: ast.MethDeclarationNode(
+def_meth %= idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,s: ast.MethDeclarationNode(
     s[1], s[3], [s[8]], s[6])
-def_meth %= idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,
-                                                                                                     s: ast.FuncDeclarationNode(
+def_meth %= idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,s: ast.FuncDeclarationNode(
     s[1], s[3], s[8], s[6])
 
-def_func %= fun + idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h, s: ast.FuncDeclarationNode(s[2],
-                                                                                                                   s[4],
-                                                                                                                   [s[
-                                                                                                                        7]])
-def_func %= fun + idx + opar + abst_param_list + cpar + ocur + abst_expr_list + ccur, lambda h,
-                                                                                             s: ast.FuncDeclarationNode(
+def_func %= fun + idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h, s: ast.FuncDeclarationNode(s[2],s[4],[s[7]])
+def_func %= fun + idx + opar + abst_param_list + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.FuncDeclarationNode(
     s[2], s[4], s[7])
-def_func %= fun + idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,
-                                                                                                   s: ast.FuncDeclarationNode(
+def_func %= fun + idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,s: ast.FuncDeclarationNode(
     s[2], s[4], [s[9]], s[7])
-def_func %= fun + idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,
-                                                                                                           s: ast.FuncDeclarationNode(
+def_func %= fun + idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,s: ast.FuncDeclarationNode(
     s[2], s[4], s[9], s[7])
 
 abst_param_list %= param_list, lambda h, s: s[1]
@@ -165,6 +149,7 @@ term %= term + congr + factor, lambda h, s: ast.CongruenceNode(s[1], s[3])
 term %= factor, lambda h, s: s[1]
 
 factor %= atom, lambda h, s: s[1]
+factor %= atom + power + factor, lambda h, s: ast.PowerNode(s[1], s[3])
 factor %= opar + arith + cpar, lambda h, s: s[2]
 
 boolean %= boolean + orx + b_or, lambda h, s: ast.OrNode(s[1], s[3])
