@@ -39,9 +39,17 @@ class Type:
         self.name = name
         self.attributes = []
         self.args: list[tuple[str, type]] = []
+        self.constructed_parent: bool = False
         self.methods = []
         self.parent = None
         self.can_be_inherited_from = True
+
+    def get_args(self):
+        if self.constructed_parent:
+            return self.args
+        if len(self.args) == 0:
+            return self.parent.get_args() if self.parent is not None else []
+        return self.args
 
     def set_parent(self, parent):
         if self.parent is not None:

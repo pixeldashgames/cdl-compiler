@@ -50,7 +50,7 @@ class TypeBuilder:
     @visitor.when(TypeDeclarationNode)
     def visit(self, node: TypeDeclarationNode):
         self.current_type = self.context.get_type(node.id)
-        
+                
         for arg in node.params:
             if arg.type is None:
                 arg_type = AnyType()
@@ -60,10 +60,14 @@ class TypeBuilder:
                 except SemanticError as e:
                     arg_type = ErrorType()
                     self.errors.append(e.text)
-            node.params.append((arg.id, arg_type))
+            self.current_type.args.append((arg.id, arg_type))
         
         if node.parent is not None:
             parent_type = self.context.get_type(node.parent)
+            
+            if node.p_params:
+                self.current_type.constructed_parent = True
+            
             if not parent_type.can_be_inherited_from:
                 self.errors.append(INVALID_INHERITANCE % node.parent)
             else:
@@ -160,7 +164,20 @@ class TypeChecker:
         this_type = self.context.get_type(node.id)
         self.current_type = this_type
         
-        # TODO: check that parent constructor arguments are properly typed
+        parent_construction_scope = scope.create_child()
+        for var, type in self.current_type.get_args():
+            parent_construction_scope.define_variable(var, type)
+        
+        if this_type.parent and node.p_params:
+            parent_args = this_type.parent.get_args()
+            
+            if len(parent_args) != len(node.p_params):
+                self.errors.append(INCORRECT_NUMBER_OF_ARGS_IN_PARENT % (this_type.parent.name, this_type.name))
+            else:
+                for i, param in enumerate(node.p_params):
+                    param_type = self.visit(param, parent_construction_scope)
+                    if not param_type.conforms_to(parent_args[i][1]):
+                        self.errors.append(INVALID_TYPE_CONVERSION % (param_type.name, parent_args[i][1].name))
         
         class_scope: Scope = scope.create_child()
         
@@ -176,7 +193,7 @@ class TypeChecker:
         initialization_scope = scope.create_child()
         attr: Attribute = self.current_type.get_attribute(node.id)
         
-        for var, type in self.current_type.args:
+        for var, type in self.current_type.get_args():
             initialization_scope.define_variable(var, type)
         
         expr_type: Type = self.visit(node.expr, initialization_scope)
@@ -323,7 +340,16 @@ class TypeChecker:
         
         return method.return_type
     
-    # TODO: Handle main conditional node
+    @visitor.when(ConditionalNode)
+    def visit(self, node: ConditionalNode, scope: Scope = None):
+        general_type = None
+        for cond in node.conds:
+            c_type = self.visit(cond, scope.create_child())
+            if general_type is None:
+                general_type = c_type
+            elif general_type != c_type:
+                general_type = AnyType()
+        return general_type
     
     @visitor.when(IfNode)
     def visit(self, node: IfNode, scope: Scope = None):
@@ -422,8 +448,22 @@ class TypeChecker:
     
     @visitor.when(InstantiateNode)
     def visit(self, node: InstantiateNode, scope: Scope = None):
-        # TODO: add params
-        pass
+        try:
+            type = self.context.get_type(node.id)
+        except SemanticError as e:
+            self.errors.append(e.text)
+            return ErrorType()
+        
+        type_args = type.get_args()
+        
+        if len(node.args) != len(type_args):
+            self.errors.append(INCORRECT_INSTANTIATION % node.id)
+        
+        for i, arg in enumerate(node.args):
+            arg_type = self.visit(arg, scope.create_child())
+            if not arg_type.conforms_to(type_args[i][1]):
+                self.errors.append(INVALID_TYPE_CONVERSION % (arg_type.name, type_args[i][1].name))
+        return type
     
     @visitor.when(ArithmeticOperationNode)
     def visit(self, node: ArithmeticOperationNode, scope: Scope = None):

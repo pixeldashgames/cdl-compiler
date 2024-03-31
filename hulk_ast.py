@@ -122,9 +122,6 @@ class BoolNode(AtomicNode):
 class VariableNode(AtomicNode):
     pass
 
-class InstantiateNode(AtomicNode):
-    pass
-
 class ArithmeticOperationNode(BinaryNode):
     pass
 
