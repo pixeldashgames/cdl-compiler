@@ -1,4 +1,4 @@
-from utils.semantic import Context, SemanticError, Type, ErrorType, VoidType, AnyType
+from utils.semantic import BooleanType, Context, IterableType, Method, Attribute, NumberType, Scope, SemanticError, StringType, Type, ErrorType, VariableInfo, VoidType, AnyType
 import utils.visitor as visitor
 from hulk_ast import *
 from errors import *
@@ -50,7 +50,7 @@ class TypeBuilder:
     @visitor.when(TypeDeclarationNode)
     def visit(self, node: TypeDeclarationNode):
         self.current_type = self.context.get_type(node.id)
-        
+                
         for arg in node.params:
             if arg.type is None:
                 arg_type = AnyType()
@@ -60,10 +60,14 @@ class TypeBuilder:
                 except SemanticError as e:
                     arg_type = ErrorType()
                     self.errors.append(e.text)
-            node.params.append((arg.id, arg_type))
+            self.current_type.args.append((arg.id, arg_type))
         
         if node.parent is not None:
             parent_type = self.context.get_type(node.parent)
+            
+            if node.p_params:
+                self.current_type.constructed_parent = True
+            
             if not parent_type.can_be_inherited_from:
                 self.errors.append(INVALID_INHERITANCE % node.parent)
             else:
@@ -134,4 +138,389 @@ class TypeBuilder:
 
 
 class TypeChecker:
-    pass
+    def __init__(self, context: Context, errors: list[str]) -> None:
+        self.context = context
+        self.errors = errors
+        self.current_type: Type
+        self.current_method: Method
+    
+    @visitor.on("node")
+    def visit(self, node, scope):
+        pass
+    
+    @visitor.when(ProgramNode)
+    def visit(self, node: ProgramNode, scope: Scope = None):
+        scope = Scope()
+        for d in node.declarations:
+            if getattr(d, "__iter__") is not None:
+                entry_scope = scope.create_child()
+                for st in d:
+                    self.visit(st, entry_scope)
+            else:
+                self.visit(d, scope.create_child())
+            
+    @visitor.when(TypeDeclarationNode)
+    def visit(self, node: TypeDeclarationNode, scope: Scope = None):
+        this_type = self.context.get_type(node.id)
+        self.current_type = this_type
+        
+        parent_construction_scope = scope.create_child()
+        for var, type in self.current_type.get_args():
+            parent_construction_scope.define_variable(var, type)
+        
+        if this_type.parent and node.p_params:
+            parent_args = this_type.parent.get_args()
+            
+            if len(parent_args) != len(node.p_params):
+                self.errors.append(INCORRECT_NUMBER_OF_ARGS_IN_PARENT % (this_type.parent.name, this_type.name))
+            else:
+                for i, param in enumerate(node.p_params):
+                    param_type = self.visit(param, parent_construction_scope)
+                    if not param_type.conforms_to(parent_args[i][1]):
+                        self.errors.append(INVALID_TYPE_CONVERSION % (param_type.name, parent_args[i][1].name))
+        
+        class_scope: Scope = scope.create_child()
+        
+        for f in node.features:
+            self.visit(f, class_scope)
+        
+        self.current_type = None
+        
+        return this_type
+    
+    @visitor.when(AttrDeclarationNode)
+    def visit(self, node: AttrDeclarationNode, scope: Scope = None):
+        initialization_scope = scope.create_child()
+        attr: Attribute = self.current_type.get_attribute(node.id)
+        
+        for var, type in self.current_type.get_args():
+            initialization_scope.define_variable(var, type)
+        
+        expr_type: Type = self.visit(node.expr, initialization_scope)
+        
+        if not expr_type.conforms_to(attr.type):
+            self.errors.append(INVALID_TYPE_CONVERSION % (expr_type.name, attr.type.name))
+        
+        return attr.type
+    
+    @visitor.when(MethDeclarationNode)
+    def visit(self, node: MethDeclarationNode, scope: Scope = None):
+        self.current_method = self.current_type.get_method(node.id)
+        
+        if self.current_type.parent is not None:
+            try:
+                conforming_method = self.current_type.parent.get_method(node.id)
+                if len(conforming_method.param_types) != len(self.current_method.param_types) \
+                    or not all([t_a == t_b for t_a, t_b in 
+                            zip(conforming_method.param_types, 
+                                self.current_method.param_types)]) or \
+                conforming_method.return_type != self.current_method.return_type:
+                    self.errors.append(WRONG_SIGNATURE % (node.id, self.current_type.name))
+            except SemanticError:
+                pass
+        
+        fun_scope = scope.create_child()
+        
+        for param, type in zip(self.current_method.param_names, self.current_method.param_types):
+            fun_scope.define_variable(param, type)
+        
+        for i, statement in enumerate(node.body):
+            s_type = self.visit(statement, fun_scope)
+            if i == len(node.body) - 1 and self.current_method != VoidType() \
+                and not s_type.conforms_to(self.current_method.return_type):
+                self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type.name))
+        
+        return self.current_method.return_type
+    
+    @visitor.when(FuncDeclarationNode)
+    def visit(self, node: FuncDeclarationNode, scope: Scope = None):
+        self.current_method = self.context.get_global_function(node.id)
+        
+        fun_scope = scope.create_child()
+        
+        for param, type in zip(self.current_method.param_names, self.current_method.param_types):
+            fun_scope.define_variable(param, type)
+        
+        for i, statement in enumerate(node.body):
+            s_type = self.visit(statement, fun_scope)
+            if i == len(node.body) - 1 and self.current_method != VoidType() \
+                and not s_type.conforms_to(self.current_method.return_type):
+                self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type.name))
+        
+        return self.current_method.return_type
+    
+    @visitor.when(VarDeclarationNode)
+    def visit(self, node: VarDeclarationNode, scope: Scope = None):       
+        current_scope = scope
+        for assig in node.asignations:
+            current_scope = current_scope.create_child()
+            self.visit(assig, current_scope)
+        
+        for i, expr in enumerate(node.expr):
+            expr_type = self.visit(node.expr, current_scope)
+            if i == len(node.expr) - 1:
+                return expr_type
+    
+    @visitor.when(AssignNode)
+    def visit(self, node: AssignNode, scope: Scope = None):
+        expr_type: Type = self.visit(node.expr, scope.create_child())
+        
+        if node.type is None:
+            var_type = AnyType()
+        else:
+            try:
+                var_type = self.context.get_type(node.type)
+            except SemanticError as e:
+                self.errors.append(e.text)
+                var_type = ErrorType()
+       
+        if not expr_type.conforms_to(var_type):
+            self.errors.append(INVALID_TYPE_CONVERSION % (expr_type.name, var_type.name))
+
+        scope.define_variable(node.id, var_type)
+            
+        return var_type
+    
+    @visitor.when(DesAssignNode)
+    def visit(self, node: DesAssignNode, scope: Scope = None):
+        expr_type = self.visit(node.expr, scope.create_child())
+        
+        if node.id == "self" and not scope.is_defined("self"):
+            self.errors.append(SELF_IS_READONLY)
+            return ErrorType()
+        
+        if not scope.is_defined(node.id):
+            self.errors.append(VARIABLE_NOT_DEFINED % node.id)
+            return ErrorType()
+        
+        var: VariableInfo = scope.find_variable(node.id)
+        
+        if not expr_type.conforms_to(var.type):
+            self.errors.append(INVALID_TYPE_CONVERSION % (expr_type.name, var.type.name))
+            
+        return var.type
+    
+    @visitor.when(MethCallNode)
+    def visit(self, node: MethCallNode, scope: Scope = None):
+        obj_type: Type = self.visit(node.obj, scope.create_child())
+        
+        try:
+            method: Method = obj_type.get_method(node.id)
+        except SemanticError as e:
+            self.errors.append(e.text)
+            return ErrorType()
+        
+        if len(node.args) != len(method.param_names):
+            self.errors.append(INCORRECT_NUMBER_OF_ARGS % node.id)
+            return method.return_type
+        
+        for i, arg in enumerate(node.args):
+            arg_type = self.visit(arg, scope.create_child())
+            if not arg_type.conforms_to(method.param_types[i]):
+                self.errors.append(INVALID_TYPE_CONVERSION % (arg_type.name, method.param_types[i].name))
+        
+        return method.return_type
+    
+    @visitor.when(FunCallNode)
+    def visit(self, node: FunCallNode, scope: Scope = None):
+        try:
+            method: Method = self.context.get_global_function(node.id)
+        except SemanticError as e:
+            self.errors.append(e.text)
+            return ErrorType()
+        
+        if len(node.args) != len(method.param_names):
+            self.errors.append(INCORRECT_NUMBER_OF_ARGS % node.id)
+            return method.return_type
+        
+        for i, arg in enumerate(node.args):
+            arg_type = self.visit(arg, scope.create_child())
+            if not arg_type.conforms_to(method.param_types[i]):
+                self.errors.append(INVALID_TYPE_CONVERSION % (arg_type.name, method.param_types[i].name))
+        
+        return method.return_type
+    
+    @visitor.when(ConditionalNode)
+    def visit(self, node: ConditionalNode, scope: Scope = None):
+        general_type = None
+        for cond in node.conds:
+            c_type = self.visit(cond, scope.create_child())
+            if general_type is None:
+                general_type = c_type
+            elif general_type != c_type:
+                general_type = AnyType()
+        return general_type
+    
+    @visitor.when(IfNode)
+    def visit(self, node: IfNode, scope: Scope = None):
+        cond_type = self.visit(node.cond, scope.create_child())
+        if cond_type != BooleanType():
+            self.errors.append(INVALID_TYPE_CONVERSION % (cond_type.name, BooleanType().name))
+            
+        expr_scope = scope.create_child()
+        for i, expr in node.expr:
+            expr_type = self.visit(expr, expr_scope)
+            if i == len(node.expr) - 1:
+                return expr_type
+            
+    @visitor.when(ElifNode)
+    def visit(self, node: ElifNode, scope: Scope = None):
+        cond_type = self.visit(node.cond, scope.create_child())
+        if cond_type != BooleanType():
+            self.errors.append(INVALID_TYPE_CONVERSION % (cond_type.name, BooleanType().name))
+            
+        expr_scope = scope.create_child()
+        for i, expr in node.expr:
+            expr_type = self.visit(expr, expr_scope)
+            if i == len(node.expr) - 1:
+                return expr_type
+            
+    @visitor.when(ElseNode)
+    def visit(self, node: ElseNode, scope: Scope = None):
+        expr_scope = scope.create_child()
+        for i, expr in node.expr:
+            expr_type = self.visit(expr, expr_scope)
+            if i == len(node.expr) - 1:
+                return expr_type
+    
+    @visitor.when(WhileNode)
+    def visit(self, node: WhileNode, scope: Scope = None):
+        cond_type = self.visit(node.cond, scope.create_child())
+        if cond_type != BooleanType():
+            self.errors.append(INVALID_TYPE_CONVERSION % (cond_type.name, BooleanType().name))
+            
+        expr_scope = scope.create_child()
+        for i, expr in node.expr:
+            expr_type = self.visit(expr, expr_scope)
+            if i == len(node.expr) - 1:
+                return expr_type
+
+    @visitor.when(ForNode)
+    def visit(self, node: ForNode, scope: Scope = None):
+        iter_type = self.visit(node.iter, scope.create_child())
+        
+        if not iter_type.conforms_to(IterableType()):
+            self.errors.append(INVALID_TYPE_CONVERSION % (iter_type.name, IterableType().name))
+        
+        expr_scope = scope.create_child()
+            
+        expr_scope.define_variable(node.var, AnyType())
+            
+        for i, expr in node.expr:
+            expr_type = self.visit(expr, expr_scope)
+            if i == len(node.expr) - 1:
+                return expr_type
+            
+    @visitor.when(AsNode)
+    def visit(self, node: AsNode, scope: Scope = None):
+        try:
+            as_type = self.context.get_type(node.type)
+        except SemanticError as e:
+            self.errors.append(e.text)
+            as_type = ErrorType()
+        
+        expr_type = self.visit(node.expr, scope.create_child())
+        
+        if not as_type.conforms_to(expr_type):
+            self.errors.append(INVALID_AS_EXPRESSION % (expr_type.name, as_type.name))
+        
+        return as_type
+    
+    @visitor.when(ConstantNumNode)
+    def visit(self, node: ConstantNumNode, scope: Scope = None):
+        return NumberType()
+    
+    @visitor.when(StringNode)
+    def visit(self, node: StringNode, scope: Scope = None):
+        return StringType()
+    
+    @visitor.when(BoolNode)
+    def visit(self, node: BoolNode, scope: Scope = None):
+        return BooleanType()
+    
+    @visitor.when(VariableNode)
+    def visit(self, node: VariableNode, scope: Scope = None):
+        if not scope.is_defined(node.lex):
+            self.errors.append(VARIABLE_NOT_DEFINED % node.lex)
+            return ErrorType()
+        
+        return scope.find_variable(node.lex).type
+    
+    @visitor.when(InstantiateNode)
+    def visit(self, node: InstantiateNode, scope: Scope = None):
+        try:
+            type = self.context.get_type(node.id)
+        except SemanticError as e:
+            self.errors.append(e.text)
+            return ErrorType()
+        
+        type_args = type.get_args()
+        
+        if len(node.args) != len(type_args):
+            self.errors.append(INCORRECT_INSTANTIATION % node.id)
+        
+        for i, arg in enumerate(node.args):
+            arg_type = self.visit(arg, scope.create_child())
+            if not arg_type.conforms_to(type_args[i][1]):
+                self.errors.append(INVALID_TYPE_CONVERSION % (arg_type.name, type_args[i][1].name))
+        return type
+    
+    @visitor.when(ArithmeticOperationNode)
+    def visit(self, node: ArithmeticOperationNode, scope: Scope = None):
+        left_type = self.visit(node.left, scope.create_child())
+        right_type = self.visit(node.right, scope.create_child())
+        
+        if left_type != NumberType() or right_type != NumberType():
+            self.errors.append(INVALID_ARITHMETIC_OPERATION % (left_type.name, right_type.name)) 
+            return ErrorType() 
+        return NumberType()
+        
+    @visitor.when(StringOperationNode)
+    def visit(self, node: StringOperationNode, scope: Scope = None):
+        left_type = self.visit(node.left, scope.create_child())
+        right_type = self.visit(node.right, scope.create_child())
+        
+        if left_type != StringType() or right_type != StringType():
+            self.errors.append(INVALID_STRING_OPERATION % (left_type.name, right_type.name))  
+            return ErrorType()
+        return StringType()
+            
+    @visitor.when(BooleanOperationNode)
+    def visit(self, node: BooleanOperationNode, scope: Scope = None):
+        left_type = self.visit(node.left, scope.create_child())
+        right_type = self.visit(node.right, scope.create_child())
+        
+        if left_type != BooleanType() or right_type != BooleanType():
+            self.errors.append(INVALID_BOOLEAN_OPERATION % (left_type.name, right_type.name))
+            return ErrorType()
+        return BooleanType()
+    
+    @visitor.when(NotNode)
+    def visit(self, node: NotNode, scope: Scope = None):
+        type = self.visit(node.node, scope.create_child())
+        
+        if type != BooleanType():
+            self.errors.append(INVALID_NOT % type.name)
+            return ErrorType()
+        return BooleanType()
+    
+    @visitor.when(ComparisonOperationNode)
+    def visit(self, node: ComparisonOperationNode, scope: Scope = None):
+        left_type = self.visit(node.left, scope.create_child())
+        right_type = self.visit(node.right, scope.create_child())
+        
+        if left_type != NumberType() or right_type != NumberType():
+            self.errors.append(INVALID_COMPARISON_OPERATION % (left_type.name, right_type.name))
+            return ErrorType()
+        return BooleanType()
+    
+    @visitor.when(IsNode)
+    def visit(self, node: IsNode, scope: Scope = None):
+        self.visit(node.left, scope.create_child())
+        
+        try:
+            self.context.get_type(node.right)
+        except SemanticError as e:
+            self.errors.append(e.text)
+        
+        return BooleanType()

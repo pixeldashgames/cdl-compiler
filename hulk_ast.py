@@ -122,52 +122,64 @@ class BoolNode(AtomicNode):
 class VariableNode(AtomicNode):
     pass
 
-class PlusNode(BinaryNode):
+class ArithmeticOperationNode(BinaryNode):
     pass
 
-class MinusNode(BinaryNode):
+class PlusNode(ArithmeticOperationNode):
     pass
 
-class StarNode(BinaryNode):
+class MinusNode(ArithmeticOperationNode):
     pass
 
-class DivNode(BinaryNode):
+class StarNode(ArithmeticOperationNode):
     pass
 
-class CongruenceNode(BinaryNode):
+class DivNode(ArithmeticOperationNode):
     pass
 
-class ConcatenateNode(BinaryNode):
+class CongruenceNode(ArithmeticOperationNode):
     pass
 
-class DoubleConcatenateNode(BinaryNode):
+class StringOperationNode(BinaryNode):
     pass
 
-class OrNode(BinaryNode):
+class ConcatenateNode(StringOperationNode):
     pass
 
-class AndNode(BinaryNode):
+class DoubleConcatenateNode(StringOperationNode):
+    pass
+
+class BooleanOperationNode(BinaryNode):
+    pass
+
+class OrNode(BooleanOperationNode):
+    pass
+
+class AndNode(BooleanOperationNode):
     pass
 
 class NotNode(UnaryNode):
     pass
 
-class MinorNode(BinaryNode):
+class ComparisonOperationNode(BinaryNode):
     pass
 
-class MayorNode(BinaryNode):
+class MinorNode(ComparisonOperationNode):
     pass
 
-class EqMinorNode(BinaryNode):
+class MayorNode(ComparisonOperationNode):
     pass
 
-class EqMayorNode(BinaryNode):
+class EqMinorNode(ComparisonOperationNode):
     pass
 
-class EqualNode(BinaryNode):
+class EqMayorNode(ComparisonOperationNode):
     pass
 
-class DifferentNode(BinaryNode):
+class EqualNode(ComparisonOperationNode):
+    pass
+
+class DifferentNode(ComparisonOperationNode):
     pass
 
 class IsNode(BinaryNode):
