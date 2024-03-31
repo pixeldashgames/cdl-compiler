@@ -173,7 +173,7 @@ class StringType(Type):
         self.can_be_inherited_from = False
 
     def __eq__(self, other):
-        return other.name == self.name or isinstance(other, NumberType)
+        return other.name == self.name or isinstance(other, StringType)
     
 class BooleanType(Type):
     def __init__(self):
@@ -182,7 +182,15 @@ class BooleanType(Type):
         self.can_be_inherited_from = False
 
     def __eq__(self, other):
-        return other.name == self.name or isinstance(other, NumberType)
+        return other.name == self.name or isinstance(other, BooleanType)
+    
+class IterableType(Type):
+    def __init__(self):
+        Type.__init__(self, 'Iterable')
+        self.set_parent(ObjectType())
+
+    def __eq__(self, other):
+        return other.name == self.name or isinstance(other, IterableType)
     
 class AnyType(Type):
     def __init__(self):
@@ -208,7 +216,7 @@ class Context:
         self.types[type.name] = type
         return type
     
-    def add_global_function(self, id, param_names, param_types, return_type):
+    def add_global_function(self, id: str, param_names: list[str], param_types: list[Type], return_type: Type):
         if id in self.global_functions:
             raise SemanticError(f'Global function with the same name ({id}) already in context.')
         func = self.global_functions[id] = Method(id, param_names, param_types, return_type)
