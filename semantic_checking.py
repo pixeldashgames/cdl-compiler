@@ -230,7 +230,11 @@ class TypeChecker:
                 and not s_type.conforms_to(self.current_method.return_type):
                 self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type.name))
         
-        return self.current_method.return_type
+        ret_type = self.current_method.return_type
+        
+        self.current_method = None
+        
+        return ret_type
     
     @visitor.when(FuncDeclarationNode)
     def visit(self, node: FuncDeclarationNode, scope: Scope = None):
@@ -247,7 +251,11 @@ class TypeChecker:
                 and not s_type.conforms_to(self.current_method.return_type):
                 self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type.name))
         
-        return self.current_method.return_type
+        ret_type = self.current_method.return_type
+        
+        self.current_method = None
+        
+        return ret_type
     
     @visitor.when(VarDeclarationNode)
     def visit(self, node: VarDeclarationNode, scope: Scope = None):       
@@ -323,6 +331,10 @@ class TypeChecker:
     
     @visitor.when(FunCallNode)
     def visit(self, node: FunCallNode, scope: Scope = None):
+        if self.current_method is not None and self.current_type is not None \
+            and self.current_type.parent is not None and node.id == "base" and len(node.args) == 0:
+                return self.current_type.parent
+        
         try:
             method: Method = self.context.get_global_function(node.id)
         except SemanticError as e:
@@ -441,6 +453,14 @@ class TypeChecker:
     @visitor.when(VariableNode)
     def visit(self, node: VariableNode, scope: Scope = None):
         if not scope.is_defined(node.lex):
+            if self.current_type is not None and self.current_method is not None \
+                and node.lex == "self":
+                    return self.current_type
+            
+            constants_types = hulk_builtins.get_builtin_constants()
+            if node.lex in constants_types:
+                return constants_types[node.lex]
+                        
             self.errors.append(VARIABLE_NOT_DEFINED % node.lex)
             return ErrorType()
         
