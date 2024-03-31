@@ -42,7 +42,8 @@ entity_list %= expr + semi, lambda h,s: [s[1]]
 entity_list %= ocur + abst_expr_list + ccur, lambda h,s: [s[2]]
 
 def_type %= typex + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[7])
-def_type %= typex + idx + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[6], s[9], s[4] )
+def_type %= typex + idx + opar + abst_param_list + cpar + inher + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[9], s[7] )
+def_type %= typex + idx +  opar + abst_param_list + cpar + inher + idx +  opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[7], s[9] )
 
 abstract_feature_list %= feature_list, lambda h,s: s[1]
 abstract_feature_list %= empty_feature_list, lambda h,s: s[1]
@@ -57,14 +58,14 @@ empty_feature_list %= HG.Epsilon, lambda h,s: []
 def_attr %= idx + equal + expr, lambda h,s: ast.AttrDeclarationNode(s[1], s[3])
 def_attr %= idx + colon + idx + equal + expr, lambda h,s: ast.AttrDeclarationNode(s[1], s[5], s[3])
 
-def_meth %= idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h,s: ast.MethDeclarationNode(s[1], s[3], s[6])
+def_meth %= idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h,s: ast.MethDeclarationNode(s[1], s[3], [s[6]])
 def_meth %= idx + opar + abst_param_list + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.MethDeclarationNode(s[1], s[3], s[6])
-def_meth %= idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,s: ast.MethDeclarationNode(s[1], s[3], s[8], s[6])
+def_meth %= idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,s: ast.MethDeclarationNode(s[1], s[3], [s[8]], s[6])
 def_meth %= idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,s: ast.FuncDeclarationNode(s[1], s[3], s[8], s[6])
 
-def_func %= fun + idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h,s: ast.FuncDeclarationNode(s[2], s[4], s[7])
+def_func %= fun + idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h,s: ast.FuncDeclarationNode(s[2], s[4], [s[7]])
 def_func %= fun + idx + opar + abst_param_list + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.FuncDeclarationNode(s[2], s[4], s[7])
-def_func %= fun + idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,s: ast.FuncDeclarationNode(s[2], s[4], s[9], s[7])
+def_func %= fun + idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,s: ast.FuncDeclarationNode(s[2], s[4], [s[9]], s[7])
 def_func %= fun + idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,s: ast.FuncDeclarationNode(s[2], s[4], s[9], s[7])
 
 abst_param_list %= param_list, lambda h,s: s[1]
@@ -87,7 +88,7 @@ expr_list %= expr + semi + expr_list, lambda h,s: [s[1]] + s[3]
 empty_expr_list %= HG.Epsilon, lambda h,s: []
 
 # ...
-expr %= let + asig_list + inx + expr + semi, lambda h,s: ast.VarDeclarationNode(s[2], s[4])
+expr %= let + asig_list + inx + expr + semi, lambda h,s: ast.VarDeclarationNode(s[2], [s[4]])
 expr %= let + asig_list + inx + ocur + abst_expr_list + ccur, lambda h,s: ast.VarDeclarationNode(s[2], s[5])
 expr %= arith, lambda h,s: s[1]
 expr %= boolean, lambda h,s: s[1]
@@ -97,16 +98,16 @@ expr %= expr + asx + idx, lambda h,s: ast.AsNode(s[1], s[3])
 atom %= expr + conct + expr, lambda h,s: ast.ConcatenateNode(s[1], s[3])
 atom %= expr + dconct + expr, lambda h,s: ast.DoubleConcatenateNode(s[1], s[3])
 
-cond %= ifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.IfNode(s[3], s[5])
+cond %= ifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.IfNode(s[3], [s[5]])
 cond %= ifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.IfNode(s[3], s[6])
-cond %= elifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.ElifNode(s[3], s[5])
+cond %= elifx + opar + boolean + cpar + expr + semi, lambda h,s: ast.ElifNode(s[3], [s[5]])
 cond %= elifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.ElifNode(s[3], s[6])
-cond %= elsex + expr + semi, lambda h,s: ast.ElseNode(s[2])
+cond %= elsex + expr + semi, lambda h,s: ast.ElseNode([s[2]])
 cond %= elsex + ocur + abst_expr_list + ccur, lambda h,s: ast.ElseNode(s[3])
 
-loop %= whilex + opar + boolean + cpar + expr + semi, lambda h,s: ast.WhileNode(s[3], s[5])
+loop %= whilex + opar + boolean + cpar + expr + semi, lambda h,s: ast.WhileNode(s[3], [s[5]])
 loop %= whilex + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.WhileNode(s[3], s[6])
-loop %= forx + opar + idx + inx + expr + cpar + expr + semi, lambda h,s: ast.ForNode(s[3], s[5], s[7])
+loop %= forx + opar + idx + inx + expr + cpar + expr + semi, lambda h,s: ast.ForNode(s[3], s[5], [s[7]])
 loop %= forx + opar + idx + inx + expr + cpar + ocur + abst_expr_list + ccur, lambda h,s: ast.ForNode(s[3], s[5], s[8])
 
 asig_list %= asig, lambda h,s: [s[1]]
