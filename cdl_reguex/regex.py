@@ -1,19 +1,14 @@
-from automata_base import NFA, DFA, nfa_to_dfa
 from automata_base import *
-from utils.pycompiler import Grammar
-from utils.utils import Token
-from parsing.parser import LR1Parser
+from cdl_parsing.parser import LR1Parser
 from utils.evaluation import evaluate_reverse_parse
 from utils.ast import AtomicNode, UnaryNode, BinaryNode, Node
-from utils.chars import *
+from cdl_grammar.chars import *
+from cdl_grammar.grammar import generate_regex_grammar
 
 
 class SymbolNode(AtomicNode):
     def evaluate(self):
         return automata_symbol(self.lex)
-
-
-SymbolNode('a').evaluate()
 
 
 class WildcardNode(AtomicNode):
@@ -22,7 +17,7 @@ class WildcardNode(AtomicNode):
         pass
 
 
-class VocabularyNode(AtomicNode):
+class VocabularyNode(Node):
     def evaluate(self):
         chars = regular_chars.split()
         automata1 = SymbolNode(chars[0]).evaluate()
@@ -44,9 +39,6 @@ class VocabularyNode(AtomicNode):
 class ClosureNode(UnaryNode):
     def evaluate(self):
         return automata_closure(self.node.evaluate())
-
-
-ClosureNode(SymbolNode('a')).evaluate()
 
 
 class PositiveClosureNode(UnaryNode):
@@ -72,9 +64,6 @@ class UnionNode(BinaryNode):
         return automata_union(left, right)
 
 
-UnionNode(SymbolNode('a'), SymbolNode('b')).evaluate()
-
-
 class ConcatNode(BinaryNode):
     def evaluate(self):
         left = self.left.evaluate()
@@ -83,67 +72,19 @@ class ConcatNode(BinaryNode):
         return automata_concatenation(left, right)
 
 
-ConcatNode(SymbolNode('a'), SymbolNode('b')).evaluate()
-
-
 class RangeNode(Node):
-    def __init__(self, left_lex, right_lex) -> None:
+    def __init__(self, left_lex, right_lex):
         self.lvalue = left_lex
         self.rvalue = right_lex
 
     def evaluate(self):
-        lascii, rascii = ord(self.lvalue), ord(self.rvalue)
+        l_ascii, r_ascii = ord(self.lvalue), ord(self.rvalue)
         aggregate = SymbolNode(self.lvalue).evaluate()
 
-        for i in range(rascii - lascii + 1):
-            aggregate = automata_union(aggregate, SymbolNode(chr(lascii + i)).evaluate())
+        for i in range(r_ascii - l_ascii + 1):
+            aggregate = automata_union(aggregate, SymbolNode(chr(l_ascii + i)).evaluate())
 
         return aggregate
-
-
-RangeNode(SymbolNode('a'), SymbolNode('z')).evaluate()
-
-G = Grammar()
-
-E = G.non_terminal('E', True)
-T, F, A = G.non_terminals('T F A')
-pipe, star, opar, cpar, symbol, epsilon = G.terminals('| * ( ) symbol ε')
-
-E %= E + pipe + T, lambda s: UnionNode(s[1], s[3])
-E %= T, lambda s: s[1]
-
-T %= T + F, lambda s: ConcatNode(s[1], s[2])
-T %= F, lambda s: s[1]
-
-F %= A + star, lambda s: ClosureNode(s[1])
-F %= A, lambda s: s[1]
-
-A %= symbol, lambda s: SymbolNode(s[1])
-A %= opar + E + cpar, lambda s: s[2]
-
-
-def regex_tokenizer(text, G, skip_whitespaces=True):
-    tokens = []
-
-    for char in text:
-        if skip_whitespaces and char.isspace():
-            continue
-        elif char == "|":
-            tokens.append(Token("|", pipe))
-        elif char == "*":
-            tokens.append(Token("*", star))
-        elif char == "(":
-            tokens.append(Token("(", opar))
-        elif char == ")":
-            tokens.append(Token(")", cpar))
-        elif char == "ε":
-            tokens.append(Token("ε", epsilon))
-
-        else:
-            tokens.append(Token(char, symbol))
-
-    tokens.append(Token('$', G.EOF))
-    return tokens
 
 
 class Regex:
@@ -152,13 +93,4 @@ class Regex:
         self.exp = exp
 
     def automaton(self):
-        tokens = regex_tokenizer(self, G)
-        parser = LR1Parser(G)
-        parse, operations = parser([t.token_type for t in tokens])
-        ast = evaluate_reverse_parse(parse, operations, tokens)
-
-        nfa = ast.evaluate()
-        dfa = nfa_to_dfa(nfa)
-        mini = automata_minimization(dfa)
-
-        return mini
+        pass

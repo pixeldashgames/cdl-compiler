@@ -1,5 +1,5 @@
 from utils.automata import State
-
+from cdl_reguex.regex import Regex
 from utils.utils import Token
 
 

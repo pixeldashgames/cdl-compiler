@@ -315,6 +315,12 @@ class Grammar:
 
         return ans
 
+    def add_empty_space(self):
+        term = self.terminal(' ')
+        self.terminals.append(term)
+        self.symDict[' '] = term
+        return term
+
     def add_production(self, production):
 
         if len(self.Productions) == 0:
