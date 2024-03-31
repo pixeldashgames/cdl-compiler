@@ -1,64 +1,80 @@
 from automata_base import NFA, DFA, nfa_to_dfa
-from automata_base import automata_union, automata_concatenation, automata_closure, automata_minimization
+from automata_base import *
 from utils.pycompiler import Grammar
 from utils.utils import Token
 from parser import LR1Parser
 from utils.evaluation import evaluate_reverse_parse
 from utils.ast import AtomicNode, UnaryNode, BinaryNode, Node
-
-EPSILON = 'ε'
-
-
-class EpsilonNode(AtomicNode):
-    def evaluate(self):
-        nfa = NFA(states=2, finals=[1], transitions={
-            (0, 'ε'): [1]
-        })
-        return nfa
-
-
-EpsilonNode(EPSILON).evaluate()
+from utils.chars import *
 
 
 class SymbolNode(AtomicNode):
     def evaluate(self):
-        s = self.lex
-
-        nfa = NFA(states=2, finals=[1], transitions={
-            (0, s): [1]
-        })
-        return nfa
+        return automata_symbol(self.lex)
 
 
 SymbolNode('a').evaluate()
 
 
+class VocabularyNode(AtomicNode):
+    def evaluate(self):
+        chars = regular_chars.split()
+        automata1 = SymbolNode(chars[0]).evaluate()
+        automata2 = SymbolNode(chars[1]).evaluate()
+        union = automata_union(automata1, automata2)
+
+        for char in chars[2:]:
+            automata = SymbolNode(char).evaluate()
+            union = automata_union(union, automata)
+        for char in regex_grammar_extra_chars:
+            automata = SymbolNode(char).evaluate()
+            union = automata_union(union, automata)
+
+        result = automata_union(union, SymbolNode(' ').evaluate())
+
+        return automata_minimization(nfa_to_dfa(result))
+
+
 class ClosureNode(UnaryNode):
-    @staticmethod
-    def operate(value: NFA):
-        nfa = automata_closure(value)
-        return nfa
+    def evaluate(self):
+        return automata_closure(self.node.evaluate())
 
 
 ClosureNode(SymbolNode('a')).evaluate()
 
 
+class PositiveClosureNode(UnaryNode):
+    def evaluate(self):
+        return automata_positive_closure(self.node.evaluate())
+
+
+class OptionalNode(UnaryNode):
+    def evaluate(self):
+        return automata_optional(self.node.evaluate())
+
+
+class NegationNode(UnaryNode):
+    def evaluate(self):
+        return automata_negation(self.node.evaluate())
+
+
 class UnionNode(BinaryNode):
-    @staticmethod
-    def operate(lvalue, rvalue):
-        nfa = automata_union(lvalue, rvalue)
-        return nfa
+    def evaluate(self):
+        left = self.left.evaluate()
+        right = self.right.evaluate()
+
+        return automata_union(left, right)
 
 
 UnionNode(SymbolNode('a'), SymbolNode('b')).evaluate()
 
 
 class ConcatNode(BinaryNode):
-    @staticmethod
-    def operate(lvalue, rvalue):
-        nfa = automata_concatenation(lvalue, rvalue)
+    def evaluate(self):
+        left = self.left.evaluate()
+        right = self.right.evaluate()
 
-        return nfa
+        return automata_concatenation(left, right)
 
 
 ConcatNode(SymbolNode('a'), SymbolNode('b')).evaluate()
@@ -83,9 +99,9 @@ RangeNode(SymbolNode('a'), SymbolNode('z')).evaluate()
 
 G = Grammar()
 
-E = G.NonTerminal('E', True)
-T, F, A = G.NonTerminals('T F A')
-pipe, star, opar, cpar, symbol, epsilon = G.Terminals('| * ( ) symbol ε')
+E = G.non_terminal('E', True)
+T, F, A = G.non_terminals('T F A')
+pipe, star, opar, cpar, symbol, epsilon = G.terminals('| * ( ) symbol ε')
 
 E %= E + pipe + T, lambda s: UnionNode(s[1], s[3])
 E %= T, lambda s: s[1]

@@ -54,7 +54,7 @@ def build_lr1_automaton(G):
 
 class LR1Parser(ShiftReduceParser):
     def _build_parsing_table(self):
-        grammar = self.G.AugmentedGrammar(True)
+        grammar = self.G.augmented_grammar(True)
 
         if self.goto == {} or self.action == {}:
             pass
