@@ -40,6 +40,7 @@ class Type:
         self.attributes = []
         self.methods = []
         self.parent = None
+        self.can_be_inherited_from = True
 
     def set_parent(self, parent):
         if self.parent is not None:
@@ -146,16 +147,86 @@ class VoidType(Type):
     def __eq__(self, other):
         return isinstance(other, VoidType)
 
-class IntType(Type):
+class ObjectType(Type):
     def __init__(self):
-        Type.__init__(self, 'int')
+        Type.__init__(self, 'Object')
+        
+    def bypass(self):
+        return True
+    
+    def __eq__(self, other) -> bool:
+        return isinstance(other, ObjectType)
+
+class NumberType(Type):
+    def __init__(self):
+        Type.__init__(self, 'Number')
+        self.set_parent(ObjectType())
+        self.can_be_inherited_from = False
 
     def __eq__(self, other):
-        return other.name == self.name or isinstance(other, IntType)
+        return other.name == self.name or isinstance(other, NumberType)
+    
+class StringType(Type):
+    def __init__(self):
+        Type.__init__(self, 'String')
+        self.set_parent(ObjectType())
+        self.can_be_inherited_from = False
+
+    def __eq__(self, other):
+        return other.name == self.name or isinstance(other, StringType)
+    
+class BooleanType(Type):
+    def __init__(self):
+        Type.__init__(self, 'Boolean')
+        self.set_parent(ObjectType())
+        self.can_be_inherited_from = False
+
+    def __eq__(self, other):
+        return other.name == self.name or isinstance(other, BooleanType)
+    
+class IterableType(Type):
+    def __init__(self):
+        Type.__init__(self, 'Iterable')
+        self.set_parent(ObjectType())
+
+    def __eq__(self, other):
+        return other.name == self.name or isinstance(other, IterableType)
+    
+class AnyType(Type):
+    def __init__(self):
+        Type.__init__(self, '<any>')
+
+    def conforms_to(self, other):
+        return True
+
+    def bypass(self):
+        return True
+
+    def __eq__(self, other):
+        return isinstance(other, Type)
 
 class Context:
     def __init__(self):
-        self.types = {}
+        self.types: dict[str, Type] = {}
+        self.global_functions: dict[str, Method] = {}
+
+    def add_type(self, type: Type):
+        if type.name in self.types:
+            raise SemanticError(f'Type with the same name ({type.name}) already in context.')
+        self.types[type.name] = type
+        return type
+    
+    def add_global_function(self, id: str, param_names: list[str], param_types: list[Type], return_type: Type):
+        if id in self.global_functions:
+            raise SemanticError(f'Global function with the same name ({id}) already in context.')
+        func = self.global_functions[id] = Method(id, param_names, param_types, return_type)
+        return func
+
+    def get_global_function(self, id):
+        try:
+            return self.global_functions[id]
+        except KeyError:
+            raise SemanticError(f'Global function "{id}" is not defined.')
 
     def create_type(self, name:str):
         if name in self.types:
@@ -170,7 +241,8 @@ class Context:
             raise SemanticError(f'Type "{name}" is not defined.')
 
     def __str__(self):
-        return '{\n\t' + '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n')) + '\n}'
+        return '{\n\t' + '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n')) + \
+            '\n\t'.join(y for x in self.global_functions.values() for y in str(x).split('\n')) + '\n}'
 
     def __repr__(self):
         return str(self)
@@ -205,7 +277,7 @@ class Scope:
         try:
             return next(x for x in locals if x.name == vname)
         except StopIteration:
-            return self.parent.find_variable(vname, self.index) if self.parent is None else None
+            return self.parent.find_variable(vname, self.index) if self.parent is not None else None
 
     def is_defined(self, vname):
         return self.find_variable(vname) is not None
