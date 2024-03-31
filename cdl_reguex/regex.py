@@ -109,6 +109,6 @@ class Regex:
         tokens.append(self.grammar.EOF)
         derivation, operations = self.parser(tokens)
         tokens = [Token(x.Name, x) for x in tokens]
-        ast = evaluate_reverse_parse(derivation, operations, tokens)
+        ast: Node = evaluate_reverse_parse(derivation, operations, tokens)
         return ast
 

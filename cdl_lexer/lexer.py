@@ -7,7 +7,7 @@ def _build_regexs(table):
     regexs = []
     for n, (token_type, regex) in enumerate(table):
 
-        states = State.from_nfa(Regex(regex).automaton())
+        states = State.from_nfa(Regex(regex).automaton)
         for state in states:
             if state.final:
                 state.tag = (n, token_type)
@@ -23,10 +23,8 @@ class Lexer:
 
     def _build_automaton(self):
         start = State('start')
-        end = State('end', True)
         for regex in self.regexs:
             start.add_epsilon_transition(regex)
-
         return start.to_deterministic()
 
     def _walk(self, string):

@@ -1,5 +1,5 @@
 from cdl_lexer.lexer import Lexer
-from parser import LR1Parser, grammar_init
+from cdl_parsing.parser import LR1Parser, grammar_init
 from utils.evaluation import evaluate_reverse_parse
 
 
