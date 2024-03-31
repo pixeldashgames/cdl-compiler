@@ -2,6 +2,7 @@ from utils.pycompiler import (Grammar, SintacticException)
 from typing import List
 from utils.utils import Token
 
+
 class ShiftReduceParser:
     SHIFT = 'SHIFT'
     REDUCE = 'REDUCE'
@@ -31,9 +32,6 @@ class ShiftReduceParser:
 
             lookahead = lookahead.token_type.Name
             if (state, lookahead) not in self.action.keys():
-                ##########################TODO###########################
-                # Mejorar la informacion al detectar error en la cadena #
-                #########################################################
                 desire = ''
                 for (state_d, lookahead_d) in self.action.keys():
                     if state_d == state:

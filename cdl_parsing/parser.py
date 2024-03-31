@@ -1,17 +1,6 @@
 from shift_reduce import ShiftReduceParser
-from utils.pycompiler import Item
 from utils.automata import State, multiline_formatter
-from utils.pycompiler import Grammar, Production, NonTerminal, Terminal, Epsilon
 from pending.utils import *
-
-
-def grammar_init():
-    g = Grammar()
-
-    # TODO: Define the grammar for the parser
-    # ------------------------------------------------
-    # ------------------------------------------------
-    return g
 
 
 def build_lr1_automaton(G):
@@ -54,7 +43,7 @@ def build_lr1_automaton(G):
 
 class LR1Parser(ShiftReduceParser):
     def _build_parsing_table(self):
-        grammar = self.G.AugmentedGrammar(True)
+        grammar = self.G.augmented_grammar(True)
 
         if self.goto == {} or self.action == {}:
             pass
@@ -63,8 +52,6 @@ class LR1Parser(ShiftReduceParser):
 
         automaton = build_lr1_automaton(grammar)
         for i, node in enumerate(automaton):
-            if self.verbose:
-                print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')
             node.idx = i
 
         for node in automaton:
