@@ -40,6 +40,7 @@ class Type:
         self.attributes = []
         self.methods = []
         self.parent = None
+        self.can_be_inherited_from = True
 
     def set_parent(self, parent):
         if self.parent is not None:
@@ -146,12 +147,42 @@ class VoidType(Type):
     def __eq__(self, other):
         return isinstance(other, VoidType)
 
-class IntType(Type):
+class ObjectType(Type):
     def __init__(self):
-        Type.__init__(self, 'int')
+        Type.__init__(self, 'Object')
+        
+    def bypass(self):
+        return True
+    
+    def __eq__(self, other) -> bool:
+        return isinstance(other, ObjectType)
+
+class NumberType(Type):
+    def __init__(self):
+        Type.__init__(self, 'Number')
+        self.set_parent(ObjectType())
+        self.can_be_inherited_from = False
 
     def __eq__(self, other):
-        return other.name == self.name or isinstance(other, IntType)
+        return other.name == self.name or isinstance(other, NumberType)
+    
+class StringType(Type):
+    def __init__(self):
+        Type.__init__(self, 'String')
+        self.set_parent(ObjectType())
+        self.can_be_inherited_from = False
+
+    def __eq__(self, other):
+        return other.name == self.name or isinstance(other, NumberType)
+    
+class BooleanType(Type):
+    def __init__(self):
+        Type.__init__(self, 'Boolean')
+        self.set_parent(ObjectType())
+        self.can_be_inherited_from = False
+
+    def __eq__(self, other):
+        return other.name == self.name or isinstance(other, NumberType)
     
 class AnyType(Type):
     def __init__(self):
