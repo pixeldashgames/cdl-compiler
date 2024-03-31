@@ -38,6 +38,7 @@ class Type:
     def __init__(self, name:str):
         self.name = name
         self.attributes = []
+        self.args: list[tuple[str, type]] = []
         self.methods = []
         self.parent = None
         self.can_be_inherited_from = True
