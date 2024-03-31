@@ -89,11 +89,3 @@ class LR1Parser(ShiftReduceParser):
     def _register(table, key, value):
         assert key not in table or table[key] == value, 'Shift-Reduce or Reduce-Reduce conflict!!!'
         table[key] = value
-
-
-class Parser:
-    def __init__(self, grammar):
-        self.grammar = grammar
-
-    def __call__(self):
-        return Parser(self.grammar)
