@@ -1,32 +1,30 @@
 from cdl_lexer.lexer import Lexer
-from cdl_parsing.parser import LR1Parser, grammar_init
+from cdl_lexer.table_lexer import regex_table
+from cdl_parsing.parser import LR1Parser
+import hulk_grammar
 from utils.evaluation import evaluate_reverse_parse
 
 
 class Hulk:
-    def __init__(self, lexer_table, lexer_eof, parser_grammar):
-        self.lexer = Lexer(lexer_table, lexer_eof)
-        self.parser = LR1Parser(parser_grammar)
+    def __init__(self, lexer_eof, parser_grammar):
+        self.lexer = Lexer(regex_table, lexer_eof)
+#        self.parser = LR1Parser(parser_grammar)
 
     def build_ast(self, text, verbose=False):
+        print("Building AST")
         all_tokens = self.lexer(text)
+        print(all_tokens)
         tokens = list(filter(lambda token: token.token_type != 'space', all_tokens))
-        right_parse, operations = self.parser(tokens)
-        ast = evaluate_reverse_parse(right_parse, operations, tokens)
-        return ast
+        print(tokens)
+        #right_parse, operations = self.parser(tokens)
+        #ast = evaluate_reverse_parse(right_parse, operations, tokens)
+        #return ast
 
     @staticmethod
-    def run():
-        nonzero_digits = '|'.join(str(n) for n in range(1, 10))
-        letters = '|'.join(chr(n) for n in range(ord('a'), ord('z') + 1))
+    def run(code: str):
+        hulk = Hulk('$', hulk_grammar.HG)
+        print(hulk.build_ast(code))
 
-        lexer = [
-            ('num', f'({nonzero_digits})(0|{nonzero_digits})*'),
-            ('for', 'for'),
-            ('foreach', 'foreach'),
-            ('space', '  *'),
-            ('id', f'({letters})({letters}|0|{nonzero_digits})*')
-        ]
 
-        hulk = Hulk(lexer, 'eof', grammar_init())
-
+if __name__ == '__main__':
+    Hulk.run("print(\"Hello World\";")

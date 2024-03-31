@@ -201,7 +201,7 @@ class DisjointSet:
 
 class DisjointNode:
     def __init__(self, value):
-        self.value = value
+        self.lex = value
         self.parent = self
 
     @property
@@ -214,7 +214,7 @@ class DisjointNode:
         other.representative.parent = self.representative
 
     def __str__(self):
-        return str(self.value)
+        return str(self.lex)
 
     def __repr__(self):
         return str(self)

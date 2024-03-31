@@ -18,14 +18,19 @@ def _build_regexs(table):
 class Lexer:
     def __init__(self, table, eof):
         self.eof = eof
+        print("build_regex start")
         self.regexs = _build_regexs(table)
+        print("build_regex done")
+        print("build_automaton start")
         self.automaton = self._build_automaton()
+        print("build_automaton done")
 
     def _build_automaton(self):
         start = State('start')
+        end = State('end', final=True)
         for regex in self.regexs:
             start.add_epsilon_transition(regex)
-        return start.to_deterministic()
+        return start  # .to_deterministic()
 
     def _walk(self, string):
         state = self.automaton

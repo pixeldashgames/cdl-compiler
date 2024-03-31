@@ -1,6 +1,7 @@
-from cdl_reguex.regex import *
+from cdl_grammar.chars import regular_chars
+from cdl_grammar.nodes import SymbolNode, ConcatNode, UnionNode, ClosureNode, PositiveClosureNode, \
+    OptionalNode, NegationNode, VocabularyNode, RangeNode
 from utils.pycompiler import Grammar
-from utils.utils import Token
 
 
 def generate_regex_grammar():
@@ -25,7 +26,7 @@ def generate_regex_grammar():
     branch %= piece + pipe + branch, lambda h, s: UnionNode(left=s[1], right=s[3])
 
     piece %= atom, lambda h, s: s[1]
-    piece %= atom + symbol, lambda h, s: s[2](child=s[1]),
+    piece %= atom + symbol, lambda h, s: s[2](s[1]),
 
     symbol %= plus, lambda h, s: PositiveClosureNode
     symbol %= star, lambda h, s: ClosureNode
@@ -60,49 +61,4 @@ def generate_regex_grammar():
     char_class_character %= literal + dot + dot + literal, lambda h, s: RangeNode(s[1], s[4])
 
     return G
-
-
-# This is for testing
-G = generate_regex_grammar()
-print("grammar generated")
-parser = LR1Parser(G, verbose=False)
-print("parser instantiate")
-zero = [x for x in G.terminals if x.Name == '0'][0]
-nine = [x for x in G.terminals if x.Name == '9'][0]
-plus = [x for x in G.terminals if x.Name == '+'][0]
-dot = [x for x in G.terminals if x.Name == '.'][0]
-question = [x for x in G.terminals if x.Name == '?'][0]
-asterisk = [x for x in G.terminals if x.Name == "*"][0]
-
-
-obrack = [x for x in G.terminals if x.Name == '['][0]
-opar = [x for x in G.terminals if x.Name == '('][0]
-cpar = [x for x in G.terminals if x.Name == ')'][0]
-cbrack = [x for x in G.terminals if x.Name == ']'][0]
-pipe = [x for x in G.terminals if x.Name == '|'][0]
-
-a = [x for x in G.terminals if x.Name == 'a'][0]
-z = [x for x in G.terminals if x.Name == 'z'][0]
-A = [x for x in G.terminals if x.Name == 'A'][0]
-Z = [x for x in G.terminals if x.Name == 'Z'][0]
-underscore = [x for x in G.terminals if x.Name == "_"][0]
-whitespace = [x for x in G.terminals if x.Name == " "][0]
-quotes = [x for x in G.terminals if x.Name == "\""][0]
-scape = [x for x in G.terminals if x.Name == "\\"][0]
-
-tokens = [quotes, opar, opar, scape, scape, scape, quotes, cpar, pipe, opar, scape, asterisk, cpar, cpar,
-          asterisk, quotes, G.EOF]
-
-
-regex = "\"((\\\\\\\")|(\\*))*\""
-
-derivation, operations = parser(tokens)
-
-print("derivation and operations created")
-new_tokens = []
-for x in tokens:
-    new_tokens.append(Token(x.Name, x, 0))
-tokens = [Token(x.Name, x, 0) for x in tokens]
-ast = evaluate_reverse_parse(derivation, operations, tokens)
-ast.evaluate()
 
