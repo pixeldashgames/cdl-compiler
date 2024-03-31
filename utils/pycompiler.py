@@ -276,7 +276,7 @@ class AttributeProduction(Production):
         pass
 
 
-class Grammar():
+class Grammar:
 
     def __init__(self):
 
@@ -288,10 +288,9 @@ class Grammar():
         self.pType = None
         self.Epsilon = Epsilon(self)
         self.EOF = EOF(self)
+        self.symDict = {'$': self.EOF}
 
-        self.symbDict = {'$': self.EOF}
-
-    def NonTerminal(self, name, startSymbol=False):
+    def non_terminal(self, name, startSymbol=False):
 
         name = name.strip()
         if not name:
@@ -307,16 +306,22 @@ class Grammar():
                 raise Exception("Cannot define more than one start symbol.")
 
         self.nonTerminals.append(term)
-        self.symbDict[name] = term
+        self.symDict[name] = term
         return term
 
-    def NonTerminals(self, names):
+    def non_terminals(self, names):
 
-        ans = tuple((self.NonTerminal(x) for x in names.strip().split()))
+        ans = tuple((self.non_terminals(x) for x in names.strip().split()))
 
         return ans
 
-    def Add_Production(self, production):
+    def add_empty_space(self):
+        term = self.terminal(' ')
+        self.terminals.append(term)
+        self.symDict[' '] = term
+        return term
+
+    def add_production(self, production):
 
         if len(self.Productions) == 0:
             self.pType = type(production)
@@ -326,7 +331,7 @@ class Grammar():
         production.Left.productions.append(production)
         self.Productions.append(production)
 
-    def Terminal(self, name):
+    def terminal(self, name):
 
         name = name.strip()
         if not name:
@@ -334,12 +339,12 @@ class Grammar():
 
         term = Terminal(name, self)
         self.terminals.append(term)
-        self.symbDict[name] = term
+        self.symDict[name] = term
         return term
 
-    def Terminals(self, names):
+    def terminals(self, names):
 
-        ans = tuple((self.Terminal(x) for x in names.strip().split()))
+        ans = tuple((self.terminal(x) for x in names.strip().split()))
 
         return ans
 
@@ -367,7 +372,7 @@ class Grammar():
 
     def __getitem__(self, name):
         try:
-            return self.symbDict[name]
+            return self.symDict[name]
         except KeyError:
             return None
 
@@ -386,8 +391,8 @@ class Grammar():
 
             productions.append({'Head': head, 'Body': body})
 
-        d = {'NonTerminals': [symb.Name for symb in self.nonTerminals],
-             'Terminals': [symb.Name for symb in self.terminals], \
+        d = {'NonTerminals': [sym.Name for sym in self.nonTerminals],
+             'Terminals': [sym.Name for sym in self.terminals],
              'Productions': productions}
 
         # [{'Head':p.Left.Name, "Body": [s.Name for s in p.Right]} for p in self.Productions]
@@ -401,10 +406,10 @@ class Grammar():
         dic = {'epsilon': G.Epsilon}
 
         for term in data['Terminals']:
-            dic[term] = G.Terminal(term)
+            dic[term] = G.terminal(term)
 
         for noTerm in data['NonTerminals']:
-            dic[noTerm] = G.NonTerminal(noTerm)
+            dic[noTerm] = G.non_terminal(noTerm)
 
         for p in data['Productions']:
             head = p['Head']
@@ -421,12 +426,12 @@ class Grammar():
         G.startSymbol = self.startSymbol
         G.Epsilon = self.Epsilon
         G.EOF = self.EOF
-        G.symbDict = self.symbDict.copy()
+        G.symDict = self.symDict.copy()
 
         return G
 
     @property
-    def IsAugmentedGrammar(self):
+    def is_augmented_grammar(self):
         augmented = 0
         for left, right in self.Productions:
             if self.startSymbol == left:
@@ -436,14 +441,14 @@ class Grammar():
         else:
             return False
 
-    def AugmentedGrammar(self, force=False):
-        if not self.IsAugmentedGrammar or force:
+    def augmented_grammar(self, force=False):
+        if not self.is_augmented_grammar or force:
 
             G = self.copy()
             # S, self.startSymbol, SS = self.startSymbol, None, self.NonTerminal('S\'', True)
             S = G.startSymbol
             G.startSymbol = None
-            SS = G.NonTerminal('S\'', True)
+            SS = G.non_terminal('S\'', True)
             if G.pType is AttributeProduction:
                 SS %= S + G.Epsilon, lambda x: x
             else:
@@ -489,27 +494,27 @@ class Item:
         return hash((self.production, self.pos, self.lookaheads))
 
     @property
-    def IsReduceItem(self):
+    def is_reduce_item(self):
         return len(self.production.Right) == self.pos
 
     @property
-    def NextSymbol(self):
+    def next_symbol(self):
         if self.pos < len(self.production.Right):
             return self.production.Right[self.pos]
         else:
             return None
 
-    def NextItem(self):
+    def next_item(self):
         if self.pos < len(self.production.Right):
             return Item(self.production, self.pos + 1, self.lookaheads)
         else:
             return None
 
-    def Preview(self, skip=1):
+    def preview(self, skip=1):
         unseen = self.production.Right[self.pos + skip:]
         return [unseen + (lookahead,) for lookahead in self.lookaheads]
 
-    def Center(self):
+    def center(self):
         return Item(self.production, self.pos)
 
 

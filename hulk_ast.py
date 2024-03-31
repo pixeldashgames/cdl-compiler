@@ -11,10 +11,11 @@ class ExpressionNode(Node):
     pass
 
 class TypeDeclarationNode(DeclarationNode):
-    def __init__(self, idx, params, features, parent=None):
+    def __init__(self, idx, params, features, parent=None, p_params = None):
         self.id = idx
         self.params = params
         self.parent = parent
+        self.p_params = p_params
         self.features = features
 
 class FuncDeclarationNode(DeclarationNode):
@@ -70,6 +71,10 @@ class FunCallNode(ExpressionNode):
         self.id = idx
         self.args = args
 
+class ConditionalNode(ExpressionNode):
+    def __init__(self, conds):
+        self.conds = conds
+        
 class IfNode(ExpressionNode):
     def __init__(self, cond, expr):
         self.cond = cond
@@ -99,6 +104,11 @@ class AsNode(ExpressionNode):
     def __init__(self, expr, typex):
         self.expr = expr
         self.type = typex
+
+class InstantiateNode(ExpressionNode):
+    def __init__(self, idx, args):
+        self.id = idx
+        self.args = args
 
 class ConstantNumNode(AtomicNode):
     pass

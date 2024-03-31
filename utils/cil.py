@@ -225,7 +225,7 @@ def get_formatter():
 
         @visitor.when(ReturnNode)
         def visit(self, node):
-            return f'RETURN {node.value if node.value is not None else ""}'
+            return f'RETURN {node.lex if node.lex is not None else ""}'
 
     printer = PrintVisitor()
     return (lambda ast: printer.visit(ast))
