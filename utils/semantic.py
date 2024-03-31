@@ -152,6 +152,19 @@ class IntType(Type):
 
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, IntType)
+    
+class AnyType(Type):
+    def __init__(self):
+        Type.__init__(self, '<any>')
+
+    def conforms_to(self, other):
+        return True
+
+    def bypass(self):
+        return True
+
+    def __eq__(self, other):
+        return isinstance(other, Type)
 
 class Context:
     def __init__(self):
