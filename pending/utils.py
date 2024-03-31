@@ -57,12 +57,12 @@ def compute_firsts(grammar):
 
 
 def expand(item, firsts):
-    next_symbol = item.NextSymbol
+    next_symbol = item.next_symbol
     if next_symbol is None or not next_symbol.IsNonTerminal:
         return []
 
     lookaheads = ContainerSet()
-    for prev in item.Preview():
+    for prev in item.preview():
         lookaheads.update(compute_local_first(firsts, prev))
 
     assert not lookaheads.contains_epsilon
@@ -90,7 +90,7 @@ def compress(items):
     centers = {}
 
     for item in items:
-        center = item.Center()
+        center = item.center()
         try:
             lookaheads = centers[center]
         except KeyError:
@@ -102,7 +102,7 @@ def compress(items):
 
 def goto_lr1(items, symbol, firsts=None, just_kernel=False):
     assert just_kernel or firsts is not None, '`firsts` must be provided if `just_kernel=False`'
-    items = frozenset(item.NextItem() for item in items if item.NextSymbol == symbol)
+    items = frozenset(item.next_item() for item in items if item.next_symbol == symbol)
     return items if just_kernel else closure_lr1(items, firsts)
 
 

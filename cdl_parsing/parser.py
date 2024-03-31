@@ -57,7 +57,7 @@ class LR1Parser(ShiftReduceParser):
         for node in automaton:
             idx = node.idx
             for item in node.state:
-                if item.IsReduceItem:
+                if item.is_reduce_item:
                     prod = item.production
                     if prod.Left == grammar.startSymbol:
                         self._register(self.action, (idx, grammar.EOF), (self.OK, None))
@@ -65,7 +65,7 @@ class LR1Parser(ShiftReduceParser):
                         for lookahead in item.lookaheads:
                             self._register(self.action, (idx, lookahead), (self.REDUCE, prod))
                 else:
-                    next_symbol = item.NextSymbol
+                    next_symbol = item.next_symbol
                     if next_symbol.IsTerminal:
                         self._register(self.action, (idx, next_symbol),
                                        (self.SHIFT, node[next_symbol.Name][0].idx))
