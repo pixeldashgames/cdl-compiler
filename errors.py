@@ -1,0 +1,1 @@
+INVALID_INHERITANCE = "You can't inherit from '%s'"

@@ -1,6 +1,7 @@
 from utils.semantic import Context, SemanticError, Type
 import utils.visitor as visitor
 from hulk_ast import *
+from errors import *
 import hulk_builtins
 
 class TypeCollector:
@@ -12,7 +13,7 @@ class TypeCollector:
     def visit(self, node):
         pass
     
-    @visitor.on(ProgramNode)
+    @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):       
         for builtin in hulk_builtins.get_builtin_types():
             self.context.add_type(builtin)
@@ -23,7 +24,7 @@ class TypeCollector:
         for dec in node.declarations:
             self.visit(dec)
             
-    @visitor.on(TypeDeclarationNode)
+    @visitor.when(TypeDeclarationNode)
     def visit(self, node: TypeDeclarationNode):
         try:
             self.context.create_type(node.id)
@@ -40,7 +41,28 @@ class TypeBuilder:
     def visit(self, node):
         pass
         
-    @visitor.on(ProgramNode)
+    @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):
         for dec in node.declarations:
             self.visit(dec)
+            
+    @visitor.when(TypeDeclarationNode)
+    def visit(self, node: TypeDeclarationNode):
+        self.current_type = self.context.get_type(node.id)
+        
+        if node.parent is not None:
+            parent_type = self.context.get_type(node.parent)
+            if not parent_type.can_be_inherited_from:
+                self.errors.append(INVALID_INHERITANCE % node.parent)
+            else:
+                try:
+                    self.current_type.set_parent(parent_type)
+                except SemanticError as e:
+                    self.errors.append(e.text)
+        
+        for f in node.features:
+            self.visit(f)
+        
+    @visitor.when(FuncDeclarationNode)
+    def visit(self, node: FuncDeclarationNode):
+        pass
