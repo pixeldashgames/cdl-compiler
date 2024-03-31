@@ -199,13 +199,26 @@ class AnyType(Type):
 
 class Context:
     def __init__(self):
-        self.types = {}
+        self.types: dict[str, Type] = {}
+        self.global_functions: dict[str, Method] = {}
 
     def add_type(self, type: Type):
         if type.name in self.types:
             raise SemanticError(f'Type with the same name ({type.name}) already in context.')
         self.types[type.name] = type
         return type
+    
+    def add_global_function(self, id, param_names, param_types, return_type):
+        if id in self.global_functions:
+            raise SemanticError(f'Global function with the same name ({id}) already in context.')
+        func = self.global_functions[id] = Method(id, param_names, param_types, return_type)
+        return func
+
+    def get_global_function(self, id):
+        try:
+            return self.global_functions[id]
+        except KeyError:
+            raise SemanticError(f'Global function "{id}" is not defined.')
 
     def create_type(self, name:str):
         if name in self.types:
@@ -220,7 +233,8 @@ class Context:
             raise SemanticError(f'Type "{name}" is not defined.')
 
     def __str__(self):
-        return '{\n\t' + '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n')) + '\n}'
+        return '{\n\t' + '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n')) + \
+            '\n\t'.join(y for x in self.global_functions.values() for y in str(x).split('\n')) + '\n}'
 
     def __repr__(self):
         return str(self)
