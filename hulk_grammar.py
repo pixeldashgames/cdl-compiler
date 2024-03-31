@@ -1,6 +1,6 @@
 from utils.pycompiler import Grammar
 import hulk_ast as ast
-#from Parsing.parser import LR1Parser
+#from parsing.parser import LR1Parser
 
 HG = Grammar()
 

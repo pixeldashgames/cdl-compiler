@@ -2,7 +2,7 @@ from automata_base import NFA, DFA, nfa_to_dfa
 from automata_base import *
 from utils.pycompiler import Grammar
 from utils.utils import Token
-from parser import LR1Parser
+from parsing.parser import LR1Parser
 from utils.evaluation import evaluate_reverse_parse
 from utils.ast import AtomicNode, UnaryNode, BinaryNode, Node
 from utils.chars import *
@@ -14,6 +14,12 @@ class SymbolNode(AtomicNode):
 
 
 SymbolNode('a').evaluate()
+
+
+class WildcardNode(AtomicNode):
+    # TODO: create a automata_wildcard, to recognize any character
+    def evaluate(self):
+        pass
 
 
 class VocabularyNode(AtomicNode):
@@ -113,7 +119,6 @@ F %= A + star, lambda s: ClosureNode(s[1])
 F %= A, lambda s: s[1]
 
 A %= symbol, lambda s: SymbolNode(s[1])
-A %= epsilon, lambda s: EpsilonNode(s[1])
 A %= opar + E + cpar, lambda s: s[2]
 
 
