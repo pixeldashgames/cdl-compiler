@@ -31,7 +31,7 @@ class TypeCollector:
         except SemanticError as e:
             self.errors.append(e.text)
       
-            
+
 class TypeBuilder:
     def __init__(self, context: Context, errors: list[str]) -> None:
         self.context: Context = context
@@ -333,7 +333,11 @@ class TypeChecker:
     def visit(self, node: FunCallNode, scope: Scope = None):
         if self.current_method is not None and self.current_type is not None \
             and self.current_type.parent is not None and node.id == "base" and len(node.args) == 0:
-                return self.current_type.parent
+                try:
+                    self.current_type.parent.get_method(node.id)
+                    return self.current_type.parent
+                except SemanticError as e:
+                    pass
         
         try:
             method: Method = self.context.get_global_function(node.id)
