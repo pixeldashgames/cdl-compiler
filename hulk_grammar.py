@@ -42,9 +42,12 @@ entity_list %= def_func + entity_list, lambda h,s: [s[1]] + s[2]
 entity_list %= expr + semi, lambda h,s: [s[1]]
 entity_list %= ocur + abst_expr_list + ccur, lambda h,s: [s[2]]
 
-def_type %= typex + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[7])
-def_type %= typex + idx + opar + abst_param_list + cpar + inher + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[9], s[7] )
-def_type %= typex + idx +  opar + abst_param_list + cpar + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[7], s[9] )
+def_type %= typex + idx + opar + param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[7], [])
+def_type %= typex + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], [], s[4], [])
+def_type %= typex + idx + opar + param_list + cpar + inher + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[9], [], s[7] )
+def_type %= typex + idx + inher + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], [], s[6], [], s[4])
+def_type %= typex + idx +  opar + param_list + cpar + inher + idx +  opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[9], s[7] )
+def_type %= typex + idx +  inher + idx +  opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(s[2], [], s[9], s[6], s[4])
 
 abstract_feature_list %= feature_list, lambda h,s: s[1]
 abstract_feature_list %= empty_feature_list, lambda h,s: s[1]

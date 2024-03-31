@@ -1,61 +1,108 @@
 from cdl_reguex.regex import *
 from utils.pycompiler import Grammar
+from utils.utils import Token
 
 
 def generate_regex_grammar():
-    grammar = Grammar()
+    G = Grammar()
 
-    reg_expr, sequence, unit, element, literal_val = grammar.non_terminals('<reg_expr> <sequence> <unit> <element> '
-                                                                           '<literal_val>')
-    symbol, class_body, class_char = grammar.non_terminals('<symbol> <class_body> <class_char>')
-    escape_sequence = grammar.non_terminals("<escape_sequence>")
+    regex = G.non_terminal('<regex>', startSymbol=True)
+    branch, piece, atom, literal = G.non_terminals('<branch> <piece> <atom> <literal>')
+    symbol, char_class_body, char_class_character = G.non_terminals('<symbol> <char-class-body> <char-class-character>')
+    escape_comp = G.non_terminal("<escape-comp>")
 
-    plus_op, star_op, question_op, not_op = grammar.terminals('+ * ? !')
-    open_par, close_par, open_bracket, close_bracket = grammar.terminals('( ) [ ]')
-    dot_op, pipe_op, escape_char = grammar.terminals('. | \\')
-    literal_chars = grammar.terminals()
+    plus, star, question, bang = G.Terminals('+ * ? !')
+    opar, cpar, obrack, cbrack = G.Terminals('( ) [ ]')
+    dot, pipe, scape = G.Terminals('. | \\')
+    literal_characters = G.Terminals(regular_chars)
 
-    quote_chars = grammar.terminals("\' \"")
+    quotes = G.Terminals("\' \"")
 
-    reg_expr %= sequence, lambda h, s: s[1]
+    regex %= branch, lambda h, s: s[1]
 
-    sequence %= unit, lambda h, s: s[1]
-    sequence %= unit + sequence, lambda h, s: ConcatNode(s[1], s[2])
-    sequence %= unit + pipe_op + sequence, lambda h, s: UnionNode(s[1], s[3])
+    branch %= piece, lambda h, s: s[1]
+    branch %= piece + branch, lambda h, s: ConcatNode(left=s[1], right=s[2])
+    branch %= piece + pipe + branch, lambda h, s: UnionNode(left=s[1], right=s[3])
 
-    unit %= element, lambda h, s: s[1]
-    unit %= element + symbol, lambda h, s: s[2](child=s[1]),
+    piece %= atom, lambda h, s: s[1]
+    piece %= atom + symbol, lambda h, s: s[2](child=s[1]),
 
-    symbol %= plus_op, lambda h, s: PositiveClosureNode
-    symbol %= star_op, lambda h, s: ClosureNode
-    symbol %= question_op, lambda h, s: OptionalNode
-    symbol %= not_op, lambda h, s: NegationNode
+    symbol %= plus, lambda h, s: PositiveClosureNode
+    symbol %= star, lambda h, s: ClosureNode
+    symbol %= question, lambda h, s: OptionalNode
+    symbol %= bang, lambda h, s: NegationNode
 
-    element %= literal_val, lambda h, s: s[1]
-    element %= open_par + sequence + close_par, lambda h, s: s[2]
-    element %= open_bracket + class_body + close_bracket, lambda h, s: s[2]
+    atom %= literal, lambda h, s: s[1]
+    atom %= opar + branch + cpar, lambda h, s: s[2]
+    atom %= obrack + char_class_body + cbrack, lambda h, s: s[2]
 
-    space_char = grammar.add_empty_space()
-    literal_val %= space_char, lambda h, s: SymbolNode(s[1])
+    whitespace = G.add_empty_space()
+    literal %= whitespace, lambda h, s: SymbolNode(s[1])
 
-    literal_val %= escape_char + escape_sequence, lambda h, s: s[2]
+    literal %= scape + escape_comp, lambda h, s: s[2]
 
-    A_terminal = [x for x in grammar.terminals if x.Name == "A"][0]
-    escape_sequence %= A_terminal, lambda h, s: VocabularyNode()
+    A = [x for x in G.terminals if x.Name == "A"][0]
+    escape_comp %= A, lambda h, s: VocabularyNode()
 
-    for v in literal_chars + quote_chars:
-        literal_val %= v, lambda h, s: SymbolNode(s[1])
+    for v in literal_characters + quotes:
+        literal %= v, lambda h, s: SymbolNode(s[1])
 
-    for v in [plus_op, star_op, question_op, not_op, open_par, close_par, open_bracket, close_bracket, pipe_op, dot_op, escape_char]:
-        escape_sequence %= v, lambda h, s: SymbolNode(s[1])
+    for v in [plus, star, question, bang, opar, cpar, obrack, cbrack, pipe, dot, scape]:
+        escape_comp %= v, lambda h, s: SymbolNode(s[1])
 
-    for v in quote_chars:
-        escape_sequence %= v, lambda h, s: SymbolNode(s[1])
+    for v in quotes:
+        escape_comp %= v, lambda h, s: SymbolNode(s[1])
 
-    class_body %= class_char, lambda h, s: s[1]
-    class_body %= class_char + class_body, lambda h, s: ConcatNode(s[1], s[2])
+    char_class_body %= char_class_character, lambda h, s: s[1]
+    char_class_body %= char_class_character + char_class_body, lambda h, s: ConcatNode(left=s[1], right=s[2])
 
-    class_char %= literal_val, lambda h, s: s[1]
-    class_char %= literal_val + dot_op + dot_op + literal_val, lambda h, s: RangeNode(s[1], s[4])
+    char_class_character %= literal, lambda h, s: s[1]
+    char_class_character %= literal + dot + dot + literal, lambda h, s: RangeNode(s[1], s[4])
 
-    return grammar
+    return G
+
+
+# This is for testing
+G = generate_regex_grammar()
+print("grammar generated")
+parser = LR1Parser(G, verbose=False)
+print("parser instantiate")
+zero = [x for x in G.terminals if x.Name == '0'][0]
+nine = [x for x in G.terminals if x.Name == '9'][0]
+plus = [x for x in G.terminals if x.Name == '+'][0]
+dot = [x for x in G.terminals if x.Name == '.'][0]
+question = [x for x in G.terminals if x.Name == '?'][0]
+asterisk = [x for x in G.terminals if x.Name == "*"][0]
+
+
+obrack = [x for x in G.terminals if x.Name == '['][0]
+opar = [x for x in G.terminals if x.Name == '('][0]
+cpar = [x for x in G.terminals if x.Name == ')'][0]
+cbrack = [x for x in G.terminals if x.Name == ']'][0]
+pipe = [x for x in G.terminals if x.Name == '|'][0]
+
+a = [x for x in G.terminals if x.Name == 'a'][0]
+z = [x for x in G.terminals if x.Name == 'z'][0]
+A = [x for x in G.terminals if x.Name == 'A'][0]
+Z = [x for x in G.terminals if x.Name == 'Z'][0]
+underscore = [x for x in G.terminals if x.Name == "_"][0]
+whitespace = [x for x in G.terminals if x.Name == " "][0]
+quotes = [x for x in G.terminals if x.Name == "\""][0]
+scape = [x for x in G.terminals if x.Name == "\\"][0]
+
+tokens = [quotes, opar, opar, scape, scape, scape, quotes, cpar, pipe, opar, scape, asterisk, cpar, cpar,
+          asterisk, quotes, G.EOF]
+
+
+regex = "\"((\\\\\\\")|(\\*))*\""
+print(regex)
+print(tokens)
+
+derivation, operations = parser(tokens)
+
+# print(derivation)
+
+tokens = [Token(x.Name, x, 0) for x in tokens]
+ast = evaluate_reverse_parse(derivation, operations, tokens)
+ast.evaluate()
+

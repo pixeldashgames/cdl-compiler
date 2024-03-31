@@ -44,7 +44,7 @@ class NonTerminal(Symbol):
 
         if isinstance(other, (Sentence)):
             p = Production(self, other)
-            self.Grammar.Add_Production(p)
+            self.Grammar.add_production(p)
             return self
 
         if isinstance(other, tuple):
@@ -62,19 +62,19 @@ class NonTerminal(Symbol):
             else:
                 raise Exception("")
 
-            self.Grammar.Add_Production(p)
+            self.Grammar.add_production(p)
             return self
 
         if isinstance(other, Symbol):
             p = Production(self, Sentence(other))
-            self.Grammar.Add_Production(p)
+            self.Grammar.add_production(p)
             return self
 
         if isinstance(other, SentenceList):
 
             for s in other:
                 p = Production(self, s)
-                self.Grammar.Add_Production(p)
+                self.Grammar.add_production(p)
 
             return self
 
@@ -311,12 +311,12 @@ class Grammar:
 
     def non_terminals(self, names):
 
-        ans = tuple((self.non_terminals(x) for x in names.strip().split()))
+        ans = tuple((self.non_terminal(x) for x in names.strip().split()))
 
         return ans
 
     def add_empty_space(self):
-        term = self.terminal(' ')
+        term = Terminal(' ', self)
         self.terminals.append(term)
         self.symDict[' '] = term
         return term
@@ -342,7 +342,7 @@ class Grammar:
         self.symDict[name] = term
         return term
 
-    def terminals(self, names):
+    def Terminals(self, names):
 
         ans = tuple((self.terminal(x) for x in names.strip().split()))
 
