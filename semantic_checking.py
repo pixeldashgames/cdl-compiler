@@ -40,7 +40,7 @@ def run_semantic_checker(ast) -> bool:
     if errors:
         found_errors = True
         
-    return not found_errors
+    return context if not found_errors else None
 
 
 class TypeCollector:
