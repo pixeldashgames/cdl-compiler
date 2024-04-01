@@ -1,9 +1,22 @@
 from utils.ast import Node, AtomicNode, BinaryNode, UnaryNode
+from errors import *
+from hulk_interpreter import InterpreterContext, InterpreterScope
+from utils.semantic import Context, Type
 
 class ProgramNode(Node):
     def __init__(self, declarations):
         self.declarations = declarations
-
+        
+    def evaluate(self, semantic_context: Context, interpreter_context: InterpreterContext, scope: InterpreterScope = None):
+        scope = InterpreterScope()
+        
+        for node in self.declarations:
+            if getattr(node, "__iter__", None) is None:
+                continue
+            
+            for expr in node:
+                expr.evaluate(semantic_context, interpreter_context, scope)
+        
 class DeclarationNode(Node):
     pass
 
@@ -17,6 +30,34 @@ class TypeDeclarationNode(DeclarationNode):
         self.parent = parent
         self.p_params = p_params
         self.features = features
+    
+    def evaluate(self, param_values: list[object], semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
+        value = {}
+        
+        parent_params = param_values
+        
+        if self.params:
+            for param, value in zip(self.params, param_values):
+                param_type = semantic_context.get_type(param.type)
+                scope.define_variable(param.id, param_type, value)
+
+            if self.parent is not None:
+                parent_params = []
+                for p in self.p_params:
+                    parent_params = p.evaluate(semantic_context, context, scope.create_child())
+                
+        if self.parent is not None:
+            parent_type = semantic_context.get_type(self.parent)
+            
+            value = context.get_type_declaration(parent_type).evaluate(parent_params, semantic_context, context, scope.create_child())
+
+        this_type = semantic_context.get_type(self.id)
+        attrs = context.get_attributes(this_type)
+        if attrs:
+            for a in attrs:
+                value[a.id] = a.evaluate(semantic_context, context, scope.create_child())
+        
+        return value
 
 class FuncDeclarationNode(DeclarationNode):
     def __init__(self, idx, params, body, return_type=None):
@@ -24,6 +65,12 @@ class FuncDeclarationNode(DeclarationNode):
         self.params = params
         self.type = return_type
         self.body = body
+        
+    def evaluate(self, param_values: list[object], semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
+        for param, value in zip(self.params, param_values):
+            param_type = semantic_context.get_type(param.type)
+            scope.define_variable(param.id, param_type, value)
+        
 
 class MethDeclarationNode(DeclarationNode):
     def __init__(self, idx, params, body, return_type=None):
@@ -31,6 +78,9 @@ class MethDeclarationNode(DeclarationNode):
         self.params = params
         self.type = return_type
         self.body = body
+        
+    def evaluate(self):
+        raise RuntimeError(CANT_EVALUATE_ERROR)
 
 class AttrDeclarationNode(DeclarationNode):
     def __init__(self, idx, expr, typex=None):
@@ -120,6 +170,9 @@ class BoolNode(AtomicNode):
     pass
 
 class VariableNode(AtomicNode):
+    pass
+
+class AttributeNode(AtomicNode):
     pass
 
 class ArithmeticOperationNode(BinaryNode):

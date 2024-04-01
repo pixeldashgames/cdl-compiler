@@ -51,10 +51,12 @@ class LR1Parser(ShiftReduceParser):
             return
 
         automaton = build_LR1_automaton(aug_grammar)
+        log_file = open("parsing_log.log", "w")
         for i, node in enumerate(automaton):
             if self.verbose:
-                print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')
+                print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n', file=log_file)
             node.idx = i
+        log_file.close()
 
         for node in automaton:
             idx = node.idx

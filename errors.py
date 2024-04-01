@@ -1,3 +1,5 @@
+# Compile-time errors
+
 INVALID_INHERITANCE = "Inheritance from '%s' is not allowed."
 INVALID_TYPE_CONVERSION = "Can't convert from %s to %s."
 WRONG_SIGNATURE = "Wrong signature when attempting to override '%s' in %s."
@@ -12,3 +14,7 @@ INVALID_COMPARISON_OPERATION = "Can't evaluate a comparison operation between ty
 INVALID_STRING_OPERATION = "Can't evaluate a string operation between types '%s' and '%s'"
 INVALID_BOOLEAN_OPERATION = "Can't evaluate a boolean operation between types '%s' and '%s'"
 INVALID_NOT = "Can't evaluate 'not' operation on type '%s'"
+
+# Runtime error
+
+CANT_EVALUATE_ERROR = "Can't evaluate %s"
