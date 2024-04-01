@@ -13,7 +13,7 @@ abst_expr_list, empty_expr_list = HG.non_terminals('<abst-expr-list> <empty-expr
 abst_param_list, empty_param_list = HG.non_terminals('<abst-param-list> <empty-param-list>')
 abst_arg_list, empty_arg_list = HG.non_terminals('<abst-arg-list> <empty-arg-list>')
 param, arith, term, factor, atom = HG.non_terminals('<parameter> <arith> <term> <factor> <atom>')
-boolean, b_or, b_and, b_not, b_rel = HG.non_terminals('<boolean> <ors> <ands> <nots> <relation>')
+boolean, b_or, b_and, b_not, b_rel, prop = HG.non_terminals('<boolean> <ors> <ands> <nots> <relation> <proposition')
 cond, loop, conct_expr = HG.non_terminals('<conditional> <loop> <conct>')
 func_call, meth_call, def_meth, def_attr = HG.non_terminals('<func-call> <meth-call> <def_meth> <def-attr>')
 feature_list, abstract_feature_list, empty_feature_list = HG.non_terminals(
@@ -145,8 +145,11 @@ boolean %= b_or, lambda h, s: s[1]
 b_or %= b_or + andx + b_and, lambda h, s: ast.AndNode(s[1], s[3])
 b_or %= b_and, lambda h, s: s[1]
 
-b_and %= notx + b_not, lambda h, s: ast.NotNode(s[2])
-b_and %= b_not, lambda h, s: s[1]
+b_and %= notx + b_and, lambda h, s: ast.NotNode(s[2])
+b_and %= prop, lambda h, s: s[1]
+
+prop %= b_not, lambda h, s: s[1]
+prop %= prop + isx + idx, lambda h, s: ast.IsNode(s[1], s[3])
 
 b_not %= b_not + minor + conct_expr, lambda h, s: ast.MinorNode(s[1], s[3])
 b_not %= b_not + mayor + conct_expr, lambda h, s: ast.MayorNode(s[1], s[3])
@@ -156,7 +159,6 @@ b_not %= b_not + same + conct_expr, lambda h, s: ast.EqualNode(s[1], s[3])
 b_not %= b_not + dif + conct_expr, lambda h, s: ast.DifferentNode(s[1], s[3])
 b_not %= conct_expr, lambda h, s: s[1]
 #b_not %= opar + boolean + cpar, lambda h, s: s[2]
-b_not %= b_not + isx + idx, lambda h, s: ast.IsNode(s[1], s[3])
 
 conct_expr %= arith, lambda h, s: s[1]
 conct_expr %= conct_expr + conct + arith, lambda h, s: ast.ConcatenateNode(s[1], s[3])
