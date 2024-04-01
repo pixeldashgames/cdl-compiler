@@ -262,12 +262,20 @@ class AssignNode(ExpressionNode):
         return self.expr.evaluate(semantic_context, context, scope)
 
 class DesAssignNode(ExpressionNode):
-    def __init__(self, idx, expr):
+    def __init__(self, idx, expr, attr_id = None):
         self.id = idx
         self.expr = expr
-        
+        self.attr_id = attr_id
+
     def evaluate(self, semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
         expr_value = self.expr.evaluate(semantic_context, context, scope)
+        
+        if self.attr_id is not None:
+            var_value = scope.self_var[1]
+            var_value[self.id] = Variable(self.id, var_value[self.id].type, expr_value.value, expr_value.value_type)
+            scope.self_var = (scope.self_var[0], var_value, scope.self_var[2])
+            return expr_value
+
         scope.modify_variable(self.id, expr_value.value, expr_value.value_type)
         return expr_value
 
@@ -279,11 +287,14 @@ class MethCallNode(ExpressionNode):
         
     def evaluate(self, semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
         self_var = self.obj.evaluate(semantic_context, context, scope.create_child())
+        save_to_var = None
         if isinstance(self.obj, VariableNode):
             var = scope.find_variable(self.obj.lex)
             if var:
+                save_to_var = scope.obj.lex
                 var_type = var.type
             elif self.obj.lex == "self":
+                save_to_var = scope.obj.lex
                 var_type = scope.self_var[0]
             else:
                 var_type = self_var.value_type
@@ -295,7 +306,18 @@ class MethCallNode(ExpressionNode):
         func_scope = InterpreterScope()
         func_scope.define_self_var(var_type, self_var, self.id)
         
-        return context.get_method(var_type, self.id).evaluate(param_values, semantic_context, context, func_scope)
+        meth_return = context.get_method(var_type, self.id).evaluate(param_values, semantic_context, context, func_scope)
+        
+        if save_to_var is not None:
+            try:
+                scope.modify_variable(save_to_var, func_scope.self_var[1].value, func_scope.self_var[1].value_type)
+            except RuntimeError as e:
+                if save_to_var == "self":
+                    scope.self_var = (scope.self_var[0], func_scope.self_var[1], scope.self_var[2])
+                else:
+                    raise e
+
+        return meth_return
         
 
 class FunCallNode(ExpressionNode):
@@ -449,9 +471,13 @@ class VariableNode(AtomicNode):
         return Value(var.value, var.underlaying_type)
 
 
-class AttributeNode(AtomicNode):
+class AttributeNode(Node):
+    def __init__(self, left_id, right_id) -> None:
+        self.left_id = left_id
+        self.right_id = right_id
+
     def evaluate(self, semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
-        attr_var: Variable = scope.self_var[1].value[self.lex]
+        attr_var: Variable = scope.self_var[1].value[self.right_id]
         return Value(attr_var.value, attr_var.underlaying_type)
 
 class ArithmeticOperationNode(BinaryNode):
