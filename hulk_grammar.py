@@ -64,8 +64,8 @@ feature_list %= def_meth + feature_list, lambda h, s: [s[1]] + s[2]
 
 empty_feature_list %= HG.Epsilon, lambda h, s: []
 
-def_attr %= idx + equal + expr, lambda h, s: ast.AttrDeclarationNode(s[1], s[3])
-def_attr %= idx + colon + idx + equal + expr, lambda h, s: ast.AttrDeclarationNode(s[1], s[5], s[3])
+def_attr %= idx + equal + expr + semi, lambda h, s: ast.AttrDeclarationNode(s[1], s[3])
+def_attr %= idx + colon + idx + equal + expr + semi, lambda h, s: ast.AttrDeclarationNode(s[1], s[5], s[3])
 
 def_meth %= idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h, s: ast.MethDeclarationNode(s[1], s[3],
                                                                                                              [s[6]])
@@ -108,7 +108,7 @@ expr %= let + asig_list + inx + expr, lambda h, s: ast.VarDeclarationNode(s[2], 
 expr %= let + asig_list + inx + ocur + abst_expr_list + ccur, lambda h, s: ast.VarDeclarationNode(s[2], s[5])
 #expr %= arith, lambda h, s: s[1]
 expr %= boolean, lambda h, s: s[1]
-expr %= cond, lambda h, s: s[1]
+#expr %= cond, lambda h, s: s[1]
 expr %= loop, lambda h, s: s[1]
 #expr %= expr + asx + idx, lambda h, s: ast.AsNode(s[1], s[3])
 expr %= des_asig, lambda h, s: s[1]
@@ -117,7 +117,7 @@ des_asig %= idx + dequal + expr, lambda h, s: ast.DesAssignNode(s[1], s[3])
 
 cond %= if_cond + elif_cond_list + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + s[2] + [s[3]])
 cond %= if_cond + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + [s[3]])
-cond %= if_cond, lambda h, s: ast.ConditionalNode([s[1]])
+#cond %= if_cond, lambda h, s: ast.ConditionalNode([s[1]])
 
 elif_cond_list %= elif_cond + elif_cond_list, lambda h, s: [s[1]] + s[2]
 elif_cond_list %= elif_cond, lambda h, s: [s[1]]
