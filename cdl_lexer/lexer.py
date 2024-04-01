@@ -30,7 +30,7 @@ class Lexer:
         end = State('end', final=True)
         for regex in self.regexs:
             start.add_epsilon_transition(regex)
-        return start  # .to_deterministic()
+        return start.to_deterministic()
 
     def _walk(self, string):
         state = self.automaton
@@ -39,7 +39,7 @@ class Lexer:
 
         for symbol in string:
             if symbol in state.transitions:
-                state[0] = state.transitions[symbol]
+                state = state.transitions[symbol][0]
                 lex += symbol
                 if state.final:
                     final = state

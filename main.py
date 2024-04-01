@@ -27,4 +27,4 @@ class Hulk:
 
 
 if __name__ == '__main__':
-    Hulk.run("print(\"Hello World\";")
+    Hulk.run("print(\"Hello World\");")
