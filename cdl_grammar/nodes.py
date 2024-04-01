@@ -75,8 +75,6 @@ class RangeNode(Node):
         self.rvalue = right_lex
 
     def evaluate(self):
-        print(self.lvalue)
-        print(type(self.lvalue))
         l_ascii, r_ascii = ord(self.lvalue.lex), ord(self.rvalue.lex)
         aggregate = SymbolNode(self.lvalue).evaluate()
 

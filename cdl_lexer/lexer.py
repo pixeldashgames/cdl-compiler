@@ -56,7 +56,6 @@ class Lexer:
                 yield lex, self.eof
                 break
             final_tag = min(final.tag, key=lambda x: x[0])
-            print(final_tag)
             yield lex, final_tag[1]
             text = text[len(lex):]
         yield '$', self.eof
