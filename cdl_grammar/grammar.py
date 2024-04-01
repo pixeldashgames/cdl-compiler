@@ -61,4 +61,3 @@ def generate_regex_grammar():
     char_class_character %= literal + dot + dot + literal, lambda h, s: RangeNode(s[1], s[4])
 
     return G
-

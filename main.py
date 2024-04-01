@@ -8,17 +8,18 @@ from utils.evaluation import evaluate_reverse_parse
 class Hulk:
     def __init__(self, lexer_eof, parser_grammar):
         self.lexer = Lexer(regex_table, lexer_eof)
-#        self.parser = LR1Parser(parser_grammar)
+        self.parser = LR1Parser(parser_grammar)  # Running this it raises a conflict error
 
     def build_ast(self, text, verbose=False):
         print("Building AST")
-        all_tokens = self.lexer(text)
-        print(all_tokens)
-        tokens = list(filter(lambda token: token.token_type != 'space', all_tokens))
+        tokens = self.lexer(text)
         print(tokens)
-        #right_parse, operations = self.parser(tokens)
-        #ast = evaluate_reverse_parse(right_parse, operations, tokens)
-        #return ast
+        # --------------------------------------------------------------------------------------
+        # Parser start here --------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------
+        right_parse, operations = self.parser(tokens)
+        ast = evaluate_reverse_parse(right_parse, operations, tokens)
+        return ast
 
     @staticmethod
     def run(code: str):
@@ -27,4 +28,6 @@ class Hulk:
 
 
 if __name__ == '__main__':
-    Hulk.run("print(\"Hello World\";")
+    with open('code.smash', 'r') as file:
+        content = file.read()
+    Hulk.run(content)
