@@ -26,7 +26,7 @@ class Hulk:
 
     @staticmethod
     def run(code: str):
-        hulk = Hulk('$', hulk_grammar.HG)
+        hulk = Hulk(hulk_grammar.HG.EOF, hulk_grammar.HG)
         ast = hulk.build_ast(code)
         context = run_semantic_checker(ast)
         if context:
