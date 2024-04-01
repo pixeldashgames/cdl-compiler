@@ -10,7 +10,7 @@ import sys
 class Hulk:
     def __init__(self, lexer_eof, parser_grammar):
         self.lexer = Lexer(regex_table, lexer_eof)
-        self.parser = LR1Parser(parser_grammar)  # Running this it raises a conflict error
+        self.parser = LR1Parser(parser_grammar, True)  # Running this it raises a conflict error
 
     def build_ast(self, text, verbose=False):
         print("Building AST")

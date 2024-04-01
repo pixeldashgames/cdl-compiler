@@ -14,7 +14,7 @@ abst_param_list, empty_param_list = HG.non_terminals('<abst-param-list> <empty-p
 abst_arg_list, empty_arg_list = HG.non_terminals('<abst-arg-list> <empty-arg-list>')
 param, arith, term, factor, atom = HG.non_terminals('<parameter> <arith> <term> <factor> <atom>')
 boolean, b_or, b_and, b_not, b_rel = HG.non_terminals('<boolean> <ors> <ands> <nots> <relation>')
-cond, loop = HG.non_terminals('<conditional> <loop>')
+cond, loop, conct_expr = HG.non_terminals('<conditional> <loop> <conct>')
 func_call, meth_call, def_meth, def_attr = HG.non_terminals('<func-call> <meth-call> <def_meth> <def-attr>')
 feature_list, abstract_feature_list, empty_feature_list = HG.non_terminals(
     '<feature-list> <abstract-feature-list> <empty-feature-list>')
@@ -106,13 +106,11 @@ empty_expr_list %= HG.Epsilon, lambda h, s: []
 # ...
 expr %= let + asig_list + inx + expr + semi, lambda h, s: ast.VarDeclarationNode(s[2], [s[4]])
 expr %= let + asig_list + inx + ocur + abst_expr_list + ccur, lambda h, s: ast.VarDeclarationNode(s[2], s[5])
-expr %= arith, lambda h, s: s[1]
+#expr %= arith, lambda h, s: s[1]
 expr %= boolean, lambda h, s: s[1]
 expr %= cond, lambda h, s: s[1]
 expr %= loop, lambda h, s: s[1]
 expr %= expr + asx + idx, lambda h, s: ast.AsNode(s[1], s[3])
-atom %= expr + conct + expr, lambda h, s: ast.ConcatenateNode(s[1], s[3])
-atom %= expr + dconct + expr, lambda h, s: ast.DoubleConcatenateNode(s[1], s[3])
 
 cond %= if_cond + elif_cond_list + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + s[2] + [s[3]])
 cond %= if_cond + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + [s[3]])
@@ -121,15 +119,17 @@ cond %= if_cond, lambda h, s: ast.ConditionalNode([s[1]])
 elif_cond_list %= elif_cond + elif_cond_list, lambda h, s: [s[1]] + s[2]
 elif_cond_list %= elif_cond, lambda h, s: [s[1]]
 
-if_cond %= ifx + opar + boolean + cpar + expr + semi, lambda h, s: ast.IfNode(s[3], [s[5]])
-if_cond %= ifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.IfNode(s[3], s[6])
+if_cond %= ifx + opar + expr + cpar + expr + semi, lambda h, s: ast.IfNode(s[3], [s[5]])
+if_cond %= ifx + opar + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.IfNode(s[3], s[6])
+
 else_cond %= elsex + expr + semi, lambda h, s: ast.ElseNode([s[2]])
 else_cond %= elsex + ocur + abst_expr_list + ccur, lambda h, s: ast.ElseNode(s[3])
-elif_cond %= elifx + opar + boolean + cpar + expr + semi, lambda h, s: ast.ElifNode(s[3], [s[5]])
-elif_cond %= elifx + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.ElifNode(s[3], s[6])
 
-loop %= whilex + opar + boolean + cpar + expr + semi, lambda h, s: ast.WhileNode(s[3], [s[5]])
-loop %= whilex + opar + boolean + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.WhileNode(s[3], s[6])
+elif_cond %= elifx + opar + expr + cpar + expr + semi, lambda h, s: ast.ElifNode(s[3], [s[5]])
+elif_cond %= elifx + opar + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.ElifNode(s[3], s[6])
+
+loop %= whilex + opar + expr + cpar + expr + semi, lambda h, s: ast.WhileNode(s[3], [s[5]])
+loop %= whilex + opar + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.WhileNode(s[3], s[6])
 loop %= forx + opar + idx + inx + expr + cpar + expr + semi, lambda h, s: ast.ForNode(s[3], s[5], [s[7]])
 loop %= forx + opar + idx + inx + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.ForNode(s[3], s[5], s[8])
 
@@ -138,6 +138,29 @@ asig_list %= asig + comma + asig_list, lambda h, s: [s[1]] + s[3]
 
 asig %= idx + equal + expr, lambda h, s: ast.AssignNode(s[1], s[3])
 asig %= idx + colon + idx + equal + expr, lambda h, s: ast.AssignNode(s[1], s[5], s[3])
+
+boolean %= boolean + orx + b_or, lambda h, s: ast.OrNode(s[1], s[3])
+boolean %= b_or, lambda h, s: s[1]
+
+b_or %= b_or + andx + b_and, lambda h, s: ast.AndNode(s[1], s[3])
+b_or %= b_and, lambda h, s: s[1]
+
+b_and %= notx + b_not, lambda h, s: ast.NotNode(s[2])
+b_and %= b_not, lambda h, s: s[1]
+
+b_not %= b_not + minor + conct_expr, lambda h, s: ast.MinorNode(s[1], s[3])
+b_not %= b_not + mayor + conct_expr, lambda h, s: ast.MayorNode(s[1], s[3])
+b_not %= b_not + eminor + conct_expr, lambda h, s: ast.EqMinorNode(s[1], s[3])
+b_not %= b_not + emayor + conct_expr, lambda h, s: ast.EqMayorNode(s[1], s[3])
+b_not %= b_not + same + conct_expr, lambda h, s: ast.EqualNode(s[1], s[3])
+b_not %= b_not + dif + conct_expr, lambda h, s: ast.DifferentNode(s[1], s[3])
+b_not %= conct_expr, lambda h, s: s[1]
+#b_not %= opar + boolean + cpar, lambda h, s: s[2]
+b_not %= b_not + isx + idx, lambda h, s: ast.IsNode(s[1], s[3])
+
+conct_expr %= arith, lambda h, s: s[1]
+conct_expr %= conct_expr + conct + arith, lambda h, s: ast.ConcatenateNode(s[1], s[3])
+conct_expr %= conct_expr + dconct + arith, lambda h, s: ast.DoubleConcatenateNode(s[1], s[3])
 
 arith %= arith + plus + term, lambda h, s: ast.PlusNode(s[1], s[3])
 arith %= arith + minus + term, lambda h, s: ast.PlusNode(s[1], s[3])
@@ -151,25 +174,6 @@ term %= factor, lambda h, s: s[1]
 factor %= atom, lambda h, s: s[1]
 factor %= atom + power + factor, lambda h, s: ast.PowerNode(s[1], s[3])
 factor %= opar + arith + cpar, lambda h, s: s[2]
-
-boolean %= boolean + orx + b_or, lambda h, s: ast.OrNode(s[1], s[3])
-boolean %= b_or, lambda h, s: s[1]
-
-b_or %= b_or + andx + b_and, lambda h, s: ast.AndNode(s[1], s[3])
-b_or %= b_and, lambda h, s: s[1]
-
-b_and %= notx + b_not, lambda h, s: ast.NotNode(s[2])
-b_and %= b_not, lambda h, s: s[1]
-
-b_not %= expr + minor + expr, lambda h, s: ast.MinorNode(s[1], s[3])
-b_not %= expr + mayor + expr, lambda h, s: ast.MayorNode(s[1], s[3])
-b_not %= expr + eminor + expr, lambda h, s: ast.EqMinorNode(s[1], s[3])
-b_not %= expr + emayor + expr, lambda h, s: ast.EqMayorNode(s[1], s[3])
-b_not %= expr + same + expr, lambda h, s: ast.EqualNode(s[1], s[3])
-b_not %= expr + dif + expr, lambda h, s: ast.DifferentNode(s[1], s[3])
-b_not %= atom, lambda h, s: s[1]
-b_not %= opar + boolean + cpar, lambda h, s: s[2]
-b_not %= expr + isx + idx, lambda h, s: ast.IsNode(s[1], s[3])
 
 atom %= num, lambda h, s: ast.ConstantNumNode(s[1])
 atom %= string, lambda h, s: ast.StringNode(s[1])
