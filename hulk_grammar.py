@@ -105,6 +105,7 @@ empty_expr_list %= HG.Epsilon, lambda h, s: []
 
 # ...
 expr %= let + asig_list + inx + expr, lambda h, s: ast.VarDeclarationNode(s[2], [s[4]])
+expr %= let + asig_list + inx + ocur + abst_expr_list + ccur, lambda h, s: ast.VarDeclarationNode(s[2], s[5])
 expr %= boolean, lambda h, s: s[1]
 expr %= cond, lambda h, s: s[1]
 expr %= loop, lambda h, s: s[1]
