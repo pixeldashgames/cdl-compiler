@@ -12,7 +12,7 @@ expr_list, param_list, arg_list = HG.non_terminals('<expr-list> <param-list> <ar
 abst_expr_list, empty_expr_list = HG.non_terminals('<abst-expr-list> <empty-expr-list>')
 abst_param_list, empty_param_list = HG.non_terminals('<abst-param-list> <empty-param-list>')
 abst_arg_list, empty_arg_list = HG.non_terminals('<abst-arg-list> <empty-arg-list>')
-param, arith, term, factor, atom = HG.non_terminals('<parameter> <arith> <term> <factor> <atom>')
+param, arith, term, factor, atom, atrib = HG.non_terminals('<parameter> <arith> <term> <factor> <atom> <atrib>')
 boolean, b_or, b_and, b_not, b_rel, prop = HG.non_terminals('<boolean> <ors> <ands> <nots> <relation> <proposition')
 cond, loop, conct_expr = HG.non_terminals('<conditional> <loop> <conct>')
 func_call, meth_call, def_meth, def_attr = HG.non_terminals('<func-call> <meth-call> <def_meth> <def-attr>')
@@ -105,19 +105,17 @@ empty_expr_list %= HG.Epsilon, lambda h, s: []
 
 # ...
 expr %= let + asig_list + inx + expr, lambda h, s: ast.VarDeclarationNode(s[2], [s[4]])
-expr %= let + asig_list + inx + ocur + abst_expr_list + ccur, lambda h, s: ast.VarDeclarationNode(s[2], s[5])
-#expr %= arith, lambda h, s: s[1]
 expr %= boolean, lambda h, s: s[1]
-#expr %= cond, lambda h, s: s[1]
+expr %= cond, lambda h, s: s[1]
 expr %= loop, lambda h, s: s[1]
 #expr %= expr + asx + idx, lambda h, s: ast.AsNode(s[1], s[3])
 expr %= des_asig, lambda h, s: s[1]
 
 des_asig %= idx + dequal + expr, lambda h, s: ast.DesAssignNode(s[1], s[3])
+des_asig %= atrib + dequal + expr, lambda h, s: ast.DesAssignNode(s[1], s[3])
 
 cond %= if_cond + elif_cond_list + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + s[2] + [s[3]])
 cond %= if_cond + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + [s[3]])
-#cond %= if_cond, lambda h, s: ast.ConditionalNode([s[1]])
 
 elif_cond_list %= elif_cond + elif_cond_list, lambda h, s: [s[1]] + s[2]
 elif_cond_list %= elif_cond, lambda h, s: [s[1]]
@@ -162,8 +160,6 @@ b_not %= b_not + same + conct_expr, lambda h, s: ast.EqualNode(s[1], s[3])
 b_not %= b_not + dif + conct_expr, lambda h, s: ast.DifferentNode(s[1], s[3])
 b_not %= conct_expr, lambda h, s: s[1]
 
-#b_not %= opar + boolean + cpar, lambda h, s: s[2]
-
 conct_expr %= arith, lambda h, s: s[1]
 conct_expr %= conct_expr + conct + arith, lambda h, s: ast.ConcatenateNode(s[1], s[3])
 conct_expr %= conct_expr + dconct + arith, lambda h, s: ast.DoubleConcatenateNode(s[1], s[3])
@@ -185,9 +181,12 @@ atom %= num, lambda h, s: ast.ConstantNumNode(s[1])
 atom %= string, lambda h, s: ast.StringNode(s[1])
 atom %= boolx, lambda h, s: ast.BoolNode(s[1])
 atom %= idx, lambda h, s: ast.VariableNode(s[1])
+atom %= atrib, lambda h, s: s[1]
 atom %= func_call, lambda h, s: s[1]
 atom %= meth_call, lambda h, s: s[1]
 atom %= new + idx + opar + abst_arg_list + cpar, lambda h, s: ast.InstantiateNode(s[2], s[4])
+
+atrib %= atom + dot + idx, lambda h, s: ast.AttributeNode(s[1] + s[3])
 
 func_call %= idx + opar + abst_arg_list + cpar, lambda h, s: ast.FunCallNode(s[1], s[3])
 
@@ -206,3 +205,4 @@ empty_arg_list %= HG.Epsilon, lambda h, s: []
 # -------------------------------------------------------------------------------------------------------------------------------------
 # parser = LR1Parser(HG)
 # print("Terrible.♠")
+
