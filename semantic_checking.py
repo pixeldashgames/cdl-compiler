@@ -509,6 +509,16 @@ class TypeChecker:
         
         return scope.find_variable(node.lex).type
     
+    @visitor.when(AttributeNode)
+    def visit(self, node: AttributeNode, scope: Scope = None):
+        try:
+            attr = self.current_type.get_attribute(node.lex)
+        except SemanticError as e:
+            self.errors.append(e.text)
+            return ErrorType()
+        
+        return attr.type
+    
     @visitor.when(InstantiateNode)
     def visit(self, node: InstantiateNode, scope: Scope = None):
         try:

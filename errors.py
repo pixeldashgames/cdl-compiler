@@ -17,4 +17,7 @@ INVALID_NOT = "Can't evaluate 'not' operation on type '%s'"
 
 # Runtime error
 
-CANT_EVALUATE_ERROR = "Can't evaluate %s"
+CANT_EVALUATE_ERROR = "Can't evaluate %s."
+VARIABLE_NOT_FOUND = "Couldn't find variable '%s' in this context."
+FUNCTION_NOT_FOUND = "Couldn't find function '%s'."
+ERROR_DOWNCASTING = "Error downcasting expression to type '%s'"

@@ -197,6 +197,7 @@ class IterableType(Type):
     def __init__(self):
         Type.__init__(self, 'Iterable')
         self.set_parent(ObjectType())
+        self.can_be_inherited_from = False
 
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, IterableType)
