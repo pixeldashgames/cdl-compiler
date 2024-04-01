@@ -1,6 +1,6 @@
 from shift_reduce import ShiftReduceParser
 from utils.automata import State, multiline_formatter
-from pending.utils import *
+from utils.utils import *
 
 
 def build_LR1_automaton(grammar):
