@@ -1,8 +1,109 @@
 from utils.ast import Node, AtomicNode, BinaryNode, UnaryNode
 from errors import *
-from hulk_interpreter import InterpreterContext, InterpreterScope, Value, Variable
 import hulk_builtins
+import itertools as itt
 from utils.semantic import AnyType, BooleanType, Context, NumberType, SemanticError, StringType, Type
+
+class Variable:
+    def __init__(self, id, type, value, underlaying_type) -> None:
+        self.id: str = id
+        self.type: Type = type
+        self.value: object = value
+        self.underlaying_type: Type = underlaying_type
+
+class Value:
+    def __init__(self, value, value_type) -> None:
+        self.value: object = value
+        self.value_type: Type = value_type
+
+class InterpreterContext:
+    def __init__(self) -> None:
+        self.global_functions: dict[str, FuncDeclarationNode] = {}
+        self.methods: dict[Type, dict[str, MethDeclarationNode]] = {}
+        self.type_declarations: dict[Type, TypeDeclarationNode] = {}
+        self.attribute_declarations: dict[Type, list[AttrDeclarationNode]]
+        
+    def add_attribute(self, type: Type, node):
+        if not self.attribute_declarations[type]:
+            self.attribute_declarations[type] = [ node ]
+        else:
+            self.attribute_declarations[type].append(node)    
+    
+    def add_global_function(self, name: str, node):
+        self.global_functions[name] = node
+        
+    def add_type_declaration(self, type: Type, node):
+        self.type_declarations[type] = node
+        
+    def add_method(self, name: str, typex: Type, node):
+        if typex not in self.methods:
+            self.methods[typex] = { name:node }
+        else:
+            self.methods[typex][name] = node
+            
+    def get_global_function(self, name: str):
+        return self.global_functions.get(name, None)
+    
+    def get_type_declaration(self, type: Type):
+        return self.type_declarations.get(type, None)
+    
+    def get_method(self, type: Type, name: str):
+        type_methods = self.methods.get(type, None)
+        if not type_methods:
+            return None
+        return type_methods.get(name, None)
+    
+    def get_attributes(self, type: Type):
+        return self.attribute_declarations.get(type, None)
+        
+            
+class InterpreterScope:
+    def __init__(self, parent=None):
+        self.locals: list[Variable] = []
+        self.self_var: tuple[Type, Value, str] = None
+        self.parent = parent
+        self.children = []
+        self.index = 0 if parent is None else len(parent)
+
+    def __len__(self):
+        return len(self.locals)
+
+    def create_child(self):
+        child = InterpreterScope(self)
+        self.children.append(child)
+        return child
+
+    def define_self_var(self, type: Type, value: Value, method_id: str):
+        self.self_var = (type, value, method_id)
+
+    def define_variable(self, vname, vtype, value, value_type):
+        var = Variable(vname, vtype, value, value_type)
+        self.locals.append(var)
+        return var
+
+    def modify_variable(self, vname, value, value_type, index=None):
+        locals = self.locals if index is None else itt.islice(self.locals, index)
+        vars = [(i, x) for i, x in enumerate(locals) if x.id == vname]
+        if not vars:
+            if self.parent is not None:
+                self.parent.modify_variable(vname, value, value_type, self.index)
+                return
+            raise RuntimeError(VARIABLE_NOT_FOUND % vname)
+        (i, var) = vars[-1]
+        self.locals[i] = Variable(var.id, var.type, value, value_type)
+        
+    def find_variable(self, vname, index=None):
+        locals = self.locals if index is None else itt.islice(self.locals, index)
+        locals = [x for x in locals if x.id == vname]
+        if not locals:
+            return self.parent.find_variable(vname, self.index) if self.parent is not None else None
+        return locals[-1]
+            
+    def is_defined(self, vname):
+        return self.find_variable(vname) is not None
+
+    def is_local(self, vname):
+        return any(True for x in self.locals if x.id == vname)
 
 class ProgramNode(Node):
     def __init__(self, declarations):

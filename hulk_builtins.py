@@ -1,4 +1,3 @@
-from hulk_interpreter import InterpreterContext, InterpreterScope, Value
 from utils.semantic import *
 from math import sqrt, sin, cos, exp, log, pi, e
 from random import random
@@ -41,8 +40,8 @@ builtin_functions = {
     "print": lambda s: print(s)
 }
 
-def execute_builtin_function(func: str, param_values: list[Value], semantic_context: Context,
-                             context: InterpreterContext, scope: InterpreterScope):
+def execute_builtin_function(func: str, param_values, semantic_context,
+                             context, scope):
     try:
         if len(param_values) == 0:
             return builtin_functions[func]()
