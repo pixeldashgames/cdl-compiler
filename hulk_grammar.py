@@ -41,7 +41,7 @@ entity_list %= def_type, lambda h, s: [s[1]]
 entity_list %= def_type + entity_list, lambda h, s: [s[1]] + s[2]
 entity_list %= def_func, lambda h, s: [s[1]]
 entity_list %= def_func + entity_list, lambda h, s: [s[1]] + s[2]
-entity_list %= expr + semi, lambda h, s: [s[1]]
+entity_list %= expr + semi, lambda h, s: [[s[1]]]
 entity_list %= ocur + abst_expr_list + ccur, lambda h, s: [s[2]]
 
 def_type %= (typex + idx + opar + param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s:ast.TypeDeclarationNode(
@@ -169,7 +169,7 @@ conct_expr %= conct_expr + conct + arith, lambda h, s: ast.ConcatenateNode(s[1],
 conct_expr %= conct_expr + dconct + arith, lambda h, s: ast.DoubleConcatenateNode(s[1], s[3])
 
 arith %= arith + plus + term, lambda h, s: ast.PlusNode(s[1], s[3])
-arith %= arith + minus + term, lambda h, s: ast.PlusNode(s[1], s[3])
+arith %= arith + minus + term, lambda h, s: ast.MinusNode(s[1], s[3])
 arith %= term, lambda h, s: s[1]
 
 term %= term + star + factor, lambda h, s: ast.StarNode(s[1], s[3])

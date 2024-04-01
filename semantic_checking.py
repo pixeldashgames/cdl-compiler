@@ -120,8 +120,8 @@ class TypeBuilder:
         
         self.current_type = None
         
-    @visitor.when(FuncDeclarationNode)
-    def visit(self, node: FuncDeclarationNode):
+    @visitor.when(MethDeclarationNode)
+    def visit(self, node: MethDeclarationNode):
         param_names = []
         param_types = []
         
@@ -139,7 +139,7 @@ class TypeBuilder:
         
         if node.type == None:
             return_type = AnyType()
-        if node.type == "void":
+        elif node.type == "void":
             return_type = VoidType()
         else:        
             try:
@@ -148,17 +148,46 @@ class TypeBuilder:
                 self.errors.append(e.text)
                 return_type = ErrorType()
             
-        if self.current_type is not None:
-            try:
-                self.current_type.define_method(node.id, param_names, param_types, return_type)
-            except SemanticError as e:
-                self.errors.append(e.text)
+        try:
+            self.current_type.define_method(node.id, param_names, param_types, return_type)
+        except SemanticError as e:
+            self.errors.append(e.text)
+ 
+    @visitor.when(FuncDeclarationNode)
+    def visit(self, node: FuncDeclarationNode):
+        param_names = []
+        param_types = []
+        
+        for p in node.params:
+            p: ParamNode = p
+            param_names.append(p.id)
+            if p.type is None:
+                param_types.append(AnyType())
+            else:
+                try:
+                    param_types.append(self.context.get_type(p.type))
+                except SemanticError as e:
+                    self.errors.append(e.text)
+                    param_types.append(ErrorType())
+        
+        if node.type is None:
+            return_type = AnyType()
+        elif node.type == "void":
+            return_type = VoidType()
         else:
             try:
-                self.context.add_global_function(node.id, param_names, param_types, return_type)
+                return_type = self.context.get_type(node.type)
             except SemanticError as e:
                 self.errors.append(e.text)
+                return_type = ErrorType()
             
+        try:
+            self.context.add_global_function(node.id, param_names, param_types, return_type)
+        except SemanticError as e:
+            self.errors.append(e.text)
+    
+    
+    
     @visitor.when(AttrDeclarationNode)
     def visit(self, node: AttrDeclarationNode):
         if node.type is None:
@@ -180,8 +209,8 @@ class TypeChecker:
     def __init__(self, context: Context, errors: list[str]) -> None:
         self.context = context
         self.errors = errors
-        self.current_type: Type
-        self.current_method: Method
+        self.current_type: Type = None
+        self.current_method: Method = None
     
     @visitor.on("node")
     def visit(self, node, scope):
@@ -286,7 +315,7 @@ class TypeChecker:
         
         for i, statement in enumerate(node.body):
             s_type = self.visit(statement, fun_scope)
-            if i == len(node.body) - 1 and self.current_method != VoidType() \
+            if i == len(node.body) - 1 and self.current_method.return_type != VoidType() \
                 and not s_type.conforms_to(self.current_method.return_type):
                 self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type.name))
         

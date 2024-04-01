@@ -90,7 +90,8 @@ class InterpreterScope:
                 return
             raise RuntimeError(VARIABLE_NOT_FOUND % vname)
         (i, var) = vars[-1]
-        self.locals[i] = Variable(var.id, var.type, value, value_type)
+        self.locals[i].value = value
+        self.locals[i].underlaying_type = value_type
         
     def find_variable(self, vname, index=None):
         locals = self.locals if index is None else itt.islice(self.locals, index)
@@ -111,7 +112,7 @@ class ProgramNode(Node):
         
     def evaluate(self, semantic_context: Context, interpreter_context: InterpreterContext, scope: InterpreterScope = None):
         scope = InterpreterScope()
-        
+                
         for node in self.declarations:
             if getattr(node, "__iter__", None) is None:
                 continue
@@ -246,7 +247,10 @@ class VarDeclarationNode(ExpressionNode):
                 var_type = expr_value.value_type
             current_scope.define_variable(a.id, var_type, expr_value.value, expr_value.value_type)
         
-        return self.expr.evaluate(semantic_context, context, current_scope)
+        for i, expr in enumerate(self.expr):
+            value = expr.evaluate(semantic_context, context, current_scope)
+            if i == len(self.expr) - 1:
+                return value
 
 class AssignNode(ExpressionNode):
     def __init__(self, idx, expr, typex=None):
@@ -254,8 +258,8 @@ class AssignNode(ExpressionNode):
         self.type = typex
         self.expr = expr
         
-    def evaluate(self):
-        raise RuntimeError(CANT_EVALUATE_ERROR % "ParamNode")
+    def evaluate(self, semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
+        return self.expr.evaluate(semantic_context, context, scope)
 
 class DesAssignNode(ExpressionNode):
     def __init__(self, idx, expr):

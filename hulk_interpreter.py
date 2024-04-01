@@ -26,7 +26,7 @@ class InterpreterCollector:
             
     @visitor.when(FuncDeclarationNode)
     def visit(self, node: FuncDeclarationNode):
-        self.context.add_global_function(node.id, node)
+        self.interpreter_context.add_global_function(node.id, node)
         
     @visitor.when(TypeDeclarationNode)
     def visit(self, node: TypeDeclarationNode):

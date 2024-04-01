@@ -1,1 +1,6 @@
-print("Hello World");
+function archiprint(s: String) => print(s);
+
+let x = 10 in while(x >= 0) {
+    archiprint("Hello World" @@ x);
+    x := x - 1;
+};
