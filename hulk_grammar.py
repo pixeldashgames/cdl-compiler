@@ -104,7 +104,7 @@ expr_list %= expr + semi + expr_list, lambda h, s: [s[1]] + s[3]
 empty_expr_list %= HG.Epsilon, lambda h, s: []
 
 # ...
-expr %= let + asig_list + inx + expr + semi, lambda h, s: ast.VarDeclarationNode(s[2], [s[4]])
+expr %= let + asig_list + inx + expr, lambda h, s: ast.VarDeclarationNode(s[2], [s[4]])
 expr %= let + asig_list + inx + ocur + abst_expr_list + ccur, lambda h, s: ast.VarDeclarationNode(s[2], s[5])
 #expr %= arith, lambda h, s: s[1]
 expr %= boolean, lambda h, s: s[1]
@@ -122,18 +122,18 @@ cond %= if_cond, lambda h, s: ast.ConditionalNode([s[1]])
 elif_cond_list %= elif_cond + elif_cond_list, lambda h, s: [s[1]] + s[2]
 elif_cond_list %= elif_cond, lambda h, s: [s[1]]
 
-if_cond %= ifx + opar + expr + cpar + expr + semi, lambda h, s: ast.IfNode(s[3], [s[5]])
+if_cond %= ifx + opar + expr + cpar + expr, lambda h, s: ast.IfNode(s[3], [s[5]])
 if_cond %= ifx + opar + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.IfNode(s[3], s[6])
 
-else_cond %= elsex + expr + semi, lambda h, s: ast.ElseNode([s[2]])
+else_cond %= elsex + expr, lambda h, s: ast.ElseNode([s[2]])
 else_cond %= elsex + ocur + abst_expr_list + ccur, lambda h, s: ast.ElseNode(s[3])
 
-elif_cond %= elifx + opar + expr + cpar + expr + semi, lambda h, s: ast.ElifNode(s[3], [s[5]])
+elif_cond %= elifx + opar + expr + cpar + expr, lambda h, s: ast.ElifNode(s[3], [s[5]])
 elif_cond %= elifx + opar + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.ElifNode(s[3], s[6])
 
-loop %= whilex + opar + expr + cpar + expr + semi, lambda h, s: ast.WhileNode(s[3], [s[5]])
+loop %= whilex + opar + expr + cpar + expr, lambda h, s: ast.WhileNode(s[3], [s[5]])
 loop %= whilex + opar + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.WhileNode(s[3], s[6])
-loop %= forx + opar + idx + inx + expr + cpar + expr + semi, lambda h, s: ast.ForNode(s[3], s[5], [s[7]])
+loop %= forx + opar + idx + inx + expr + cpar + expr, lambda h, s: ast.ForNode(s[3], s[5], [s[7]])
 loop %= forx + opar + idx + inx + expr + cpar + ocur + abst_expr_list + ccur, lambda h, s: ast.ForNode(s[3], s[5], s[8])
 
 asig_list %= asig, lambda h, s: [s[1]]
