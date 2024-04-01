@@ -12,6 +12,7 @@ def get_builtin_functions() -> list[tuple[str, list[str], list[Type], Type]]:
         ("exp", ["x"], [NumberType()], [NumberType()]),
         ("log", ["b", "x"], [NumberType(), NumberType()], [NumberType()]),
         ("rand", [], [], [NumberType()]),
+        ("print", ["s"], [StringType()] [VoidType()])
         ("range", ["start", "end"], [NumberType(), NumberType()], [IterableType()]),
     ]
     

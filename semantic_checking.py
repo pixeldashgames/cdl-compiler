@@ -4,9 +4,47 @@ from hulk_ast import *
 from errors import *
 import hulk_builtins
 
+
+def run_semantic_checker(ast) -> bool:
+    errors = []
+    found_errors = False
+    
+    print('============== COLLECTING TYPES ===============')
+    collector = TypeCollector(errors)
+    collector.visit(ast)
+    context = collector.context
+    print('Type collection errors:\n', "\n".join(errors))
+    print('Context:')
+    print(context)
+    
+    if errors:
+        found_errors = True
+    
+    print('=============== BUILDING TYPES ================')
+    builder = TypeBuilder(context, errors)
+    builder.visit(ast)
+    print('Type building errors:\n', "\n".join(errors))
+    print('Context:')
+    print(context)
+    
+    if errors:
+        found_errors = True
+        
+    print('=============== CHECKING TYPES ================')
+    checker = TypeChecker(context, errors)
+    checker.visit(ast)
+    print('Type checking errors:\n', "\n".join(errors))
+    print('Context:')
+    print(context)
+    
+    if errors:
+        found_errors = True
+        
+    return not found_errors
+
 class TypeCollector:
-    def __init__(self) -> None:
-        self.errors: list[str] = []
+    def __init__(self, errors: list[str]) -> None:
+        self.errors = errors
         self.context: Context = Context()
         
     @visitor.on("node")
@@ -152,7 +190,7 @@ class TypeChecker:
     def visit(self, node: ProgramNode, scope: Scope = None):
         scope = Scope()
         for d in node.declarations:
-            if getattr(d, "__iter__") is not None:
+            if getattr(d, "__iter__", None) is not None:
                 entry_scope = scope.create_child()
                 for st in d:
                     self.visit(st, entry_scope)
@@ -504,7 +542,7 @@ class TypeChecker:
         left_type = self.visit(node.left, scope.create_child())
         right_type = self.visit(node.right, scope.create_child())
         
-        if left_type != StringType() or right_type != StringType():
+        if left_type not in [StringType(), NumberType()] or right_type not in [StringType(), NumberType()]:
             self.errors.append(INVALID_STRING_OPERATION % (left_type.name, right_type.name))  
             return ErrorType()
         return StringType()

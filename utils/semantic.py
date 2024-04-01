@@ -148,7 +148,7 @@ class VoidType(Type):
         Type.__init__(self, '<void>')
 
     def conforms_to(self, other):
-        raise Exception('Invalid type: void type.')
+        return False
 
     def bypass(self):
         return True
@@ -173,7 +173,7 @@ class NumberType(Type):
         self.can_be_inherited_from = False
 
     def __eq__(self, other):
-        return other.name == self.name or isinstance(other, NumberType)
+        return other.name == self.name or other.name == StringType().name or isinstance(other, NumberType) or isinstance(other, StringType)
     
 class StringType(Type):
     def __init__(self):
