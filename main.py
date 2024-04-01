@@ -4,6 +4,7 @@ from cdl_parsing.parser import LR1Parser
 import hulk_grammar
 from utils.evaluation import evaluate_reverse_parse
 from semantic_checking import run_semantic_checker
+from hulk_interpreter import InterpreterCollector
 import sys
 
 
@@ -27,11 +28,15 @@ class Hulk:
     def run(code: str):
         hulk = Hulk('$', hulk_grammar.HG)
         ast = hulk.build_ast(code)
-        is_correct = run_semantic_checker(ast)
-        if is_correct:
+        context = run_semantic_checker(ast)
+        if context:
             print("Semantic check passed")
         else:
             print("Semantic check failed")
+            return
+        interpreter_collector = InterpreterCollector(context)
+        interpreter_collector.visit(ast)
+        ast.evaluate(context, interpreter_collector.interpreter_context)
 
 
 if __name__ == '__main__':

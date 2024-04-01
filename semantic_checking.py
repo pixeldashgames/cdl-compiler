@@ -40,7 +40,7 @@ def run_semantic_checker(ast) -> bool:
     if errors:
         found_errors = True
         
-    return not found_errors
+    return context if not found_errors else None
 
 
 class TypeCollector:
@@ -508,6 +508,16 @@ class TypeChecker:
             return ErrorType()
         
         return scope.find_variable(node.lex).type
+    
+    @visitor.when(AttributeNode)
+    def visit(self, node: AttributeNode, scope: Scope = None):
+        try:
+            attr = self.current_type.get_attribute(node.lex)
+        except SemanticError as e:
+            self.errors.append(e.text)
+            return ErrorType()
+        
+        return attr.type
     
     @visitor.when(InstantiateNode)
     def visit(self, node: InstantiateNode, scope: Scope = None):
