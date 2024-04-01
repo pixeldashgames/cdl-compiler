@@ -78,5 +78,5 @@ class LR1Parser(ShiftReduceParser):
 
     @staticmethod
     def _register(table, key, value):
-        assert key not in table or table[key] == value, 'Shift-Reduce or Reduce-Reduce conflict!!!'
+        assert key not in table or table[key] == value, f'Shift-Reduce or Reduce-Reduce conflict!!! in  {key}, {table[key]}, {value}'
         table[key] = value
