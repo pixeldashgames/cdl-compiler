@@ -27,7 +27,6 @@ class Lexer:
 
     def _build_automaton(self):
         start = State('start')
-        end = State('end', final=True)
         for regex in self.regexs:
             start.add_epsilon_transition(regex)
         return start.to_deterministic()
@@ -51,11 +50,14 @@ class Lexer:
 
     def _tokenize(self, text):
         while text:
+            text = text.lstrip()
             final, lex = self._walk(text)
             if final is None:
                 yield lex, self.eof
                 break
-            yield lex, final.tag
+            final_tag = min(final.tag, key=lambda x: x[0])
+            print(final_tag)
+            yield lex, final_tag[1]
             text = text[len(lex):]
         yield '$', self.eof
 
