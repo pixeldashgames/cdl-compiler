@@ -42,6 +42,7 @@ def run_semantic_checker(ast) -> bool:
         
     return not found_errors
 
+
 class TypeCollector:
     def __init__(self, errors: list[str]) -> None:
         self.errors = errors
