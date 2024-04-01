@@ -115,7 +115,7 @@ des_asig %= idx + dequal + expr, lambda h, s: ast.DesAssignNode(s[1], s[3])
 des_asig %= atrib + dequal + expr, lambda h, s: ast.DesAssignNode(s[1], s[3])
 
 cond %= if_cond + elif_cond_list + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + s[2] + [s[3]])
-cond %= if_cond + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + [s[3]])
+cond %= if_cond + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + [s[2]])
 
 elif_cond_list %= elif_cond + elif_cond_list, lambda h, s: [s[1]] + s[2]
 elif_cond_list %= elif_cond, lambda h, s: [s[1]]
