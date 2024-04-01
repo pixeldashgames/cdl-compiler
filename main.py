@@ -20,7 +20,7 @@ class Hulk:
         # --------------------------------------------------------------------------------------
         # Parser start here --------------------------------------------------------------------
         # --------------------------------------------------------------------------------------
-        right_parse, operations = self.parser(tokens)
+        right_parse, operations = self.parser([t.token_type for t in tokens])
         ast = evaluate_reverse_parse(right_parse, operations, tokens)
         return ast
 
