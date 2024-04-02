@@ -32,13 +32,11 @@ class ShiftReduceParser:
             try:
                 action, tag = self.action[state, lookahead]
             except Exception as e:
-                print
                 # Follow the row state and give the terminals that have either shift or reduce
                 # actions
-                actions = {(k[1], type(k[1])) for k in self.action if k[0] == state}
+                actions = {k[1] for k in self.action if k[0] == state}
                 raise Exception(
-                    f"PARSER ERROR: Invalid token on cursor {cursor} and lookahead {lookahead} ({type(lookahead)}), expected one of {actions}")
-
+                    f"Unexpected token {lookahead} on cursor {cursor}, expected one of {actions}")
             if action == ShiftReduceParser.SHIFT:
                 stack.append(lookahead)
                 stack.append(tag)

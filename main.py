@@ -13,7 +13,6 @@ class Hulk:
         self.verbose = verbose
         self.lexer = Lexer(regex_table, lexer_eof, verbose)
         self.parser = LR1Parser(parser_grammar, verbose)  
-# Running this it raises a conflict error
 
     def build_ast(self, text):
         if self.verbose:
@@ -28,7 +27,13 @@ class Hulk:
     @staticmethod
     def run(code: str, verbose = False):
         hulk = Hulk(hulk_grammar.HG.EOF, hulk_grammar.HG, verbose)
-        ast = hulk.build_ast(code)
+        try:
+            ast = hulk.build_ast(code)
+        except Exception as e:
+            print("Error found at parse-time!")
+            print(e.args[0])
+            return
+            
         errors, context = run_semantic_checker(ast, verbose)
         if errors:
             print("Errors found at compile-time!")
