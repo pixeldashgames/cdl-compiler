@@ -43,7 +43,7 @@ class InterpreterCollector:
         for name, method in self.interpreter_context.methods[self.current_type].items():
             children = [t for t in self.semantic_context.types.values() if t.conforms_to(self.current_type)]
             for c in children:
-                if not self.interpreter_context.methods[c] \
+                if c not in self.interpreter_context.methods \
                     or not self.interpreter_context.methods[c].get(name, None):
                     self.interpreter_context.add_method(name, c, method)
     

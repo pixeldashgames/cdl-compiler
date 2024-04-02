@@ -64,8 +64,8 @@ feature_list %= def_meth + feature_list, lambda h, s: [s[1]] + s[2]
 
 empty_feature_list %= HG.Epsilon, lambda h, s: []
 
-def_attr %= idx + equal + expr + semi, lambda h, s: ast.AttrDeclarationNode(s[1], s[3])
-def_attr %= idx + colon + idx + equal + expr + semi, lambda h, s: ast.AttrDeclarationNode(s[1], s[5], s[3])
+def_attr %= idx + equal + expr, lambda h, s: ast.AttrDeclarationNode(s[1], s[3])
+def_attr %= idx + colon + idx + equal + expr, lambda h, s: ast.AttrDeclarationNode(s[1], s[5], s[3])
 
 def_meth %= idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h, s: ast.MethDeclarationNode(s[1], s[3],
                                                                                                              [s[6]])
@@ -115,7 +115,7 @@ des_asig %= idx + dequal + expr, lambda h, s: ast.DesAssignNode(s[1], s[3])
 des_asig %= atrib + dequal + expr, lambda h, s: ast.DesAssignNode(s[1], s[3])
 
 cond %= if_cond + elif_cond_list + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + s[2] + [s[3]])
-cond %= if_cond + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + [s[3]])
+cond %= if_cond + else_cond, lambda h, s: ast.ConditionalNode([s[1]] + [s[2]])
 
 elif_cond_list %= elif_cond + elif_cond_list, lambda h, s: [s[1]] + s[2]
 elif_cond_list %= elif_cond, lambda h, s: [s[1]]
@@ -189,7 +189,7 @@ atom %= func_call, lambda h, s: s[1]
 atom %= meth_call, lambda h, s: s[1]
 atom %= new + idx + opar + abst_arg_list + cpar, lambda h, s: ast.InstantiateNode(s[2], s[4])
 
-atrib %= atom + dot + idx, lambda h, s: ast.AttributeNode(s[1] + s[3])
+atrib %= atom + dot + idx, lambda h, s: ast.AttributeNode(s[1], s[3])
 
 func_call %= idx + opar + abst_arg_list + cpar, lambda h, s: ast.FunCallNode(s[1], s[3])
 

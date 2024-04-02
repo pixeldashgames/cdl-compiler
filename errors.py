@@ -15,6 +15,7 @@ INVALID_STRING_OPERATION = "Can't evaluate a string operation between types '%s'
 INVALID_BOOLEAN_OPERATION = "Can't evaluate a boolean operation between types '%s' and '%s'"
 INVALID_NOT = "Can't evaluate 'not' operation on type '%s'"
 INVALID_ATTRIBUTE_INVOCATION = "An attribute reference must always be done using the self keyword"
+CANT_ASSIGN_TO_VOID = "Can't assign to void type."
 
 # Runtime error
 

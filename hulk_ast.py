@@ -21,10 +21,10 @@ class InterpreterContext:
         self.global_functions: dict[str, FuncDeclarationNode] = {}
         self.methods: dict[Type, dict[str, MethDeclarationNode]] = {}
         self.type_declarations: dict[Type, TypeDeclarationNode] = {}
-        self.attribute_declarations: dict[Type, list[AttrDeclarationNode]]
+        self.attribute_declarations: dict[Type, list[AttrDeclarationNode]] = {}
         
     def add_attribute(self, type: Type, node):
-        if not self.attribute_declarations[type]:
+        if type not in self.attribute_declarations:
             self.attribute_declarations[type] = [ node ]
         else:
             self.attribute_declarations[type].append(node)    
@@ -60,7 +60,7 @@ class InterpreterContext:
 class InterpreterScope:
     def __init__(self, parent=None):
         self.locals: list[Variable] = []
-        self.self_var: tuple[Type, Value, str] = None
+        self.self_var: tuple[Type, Value, str] = parent.self_var if parent is not None else None
         self.parent = parent
         self.children = []
         self.index = 0 if parent is None else len(parent)
@@ -140,12 +140,12 @@ class TypeDeclarationNode(DeclarationNode):
         parent_params = param_values
         
         if self.params:
-            for param, value in zip(self.params, param_values):
+            for param, param_value in zip(self.params, param_values):
                 if param.type is None:
-                    param_type = value.value_type
+                    param_type = param_value.value_type
                 else:
                     param_type = semantic_context.get_type(param.type)
-                scope.define_variable(param.id, param_type, value.value, value.value_type)
+                scope.define_variable(param.id, param_type, param_value.value, param_value.value_type)
 
             if self.parent is not None:
                 parent_params = [p.evaluate(semantic_context, context, scope.create_child()) for p in self.p_params]
@@ -291,10 +291,10 @@ class MethCallNode(ExpressionNode):
         if isinstance(self.obj, VariableNode):
             var = scope.find_variable(self.obj.lex)
             if var:
-                save_to_var = scope.obj.lex
+                save_to_var = self.obj.lex
                 var_type = var.type
             elif self.obj.lex == "self":
-                save_to_var = scope.obj.lex
+                save_to_var = self.obj.lex
                 var_type = scope.self_var[0]
             else:
                 var_type = self_var.value_type
@@ -424,7 +424,7 @@ class AsNode(ExpressionNode):
     def evaluate(self, semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
         expr_value = self.expr.evaluate(semantic_context, context, scope.create_child())
         
-        as_type = semantic_context.get_type(self.type)
+        as_type = semantic_context.get_type(self.type.lex)
         
         if not expr_value.value_type.conforms_to(as_type):
             raise RuntimeError(ERROR_DOWNCASTING % as_type.name)

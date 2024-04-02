@@ -148,7 +148,7 @@ class VoidType(Type):
         Type.__init__(self, '<void>')
 
     def conforms_to(self, other):
-        return False
+        return isinstance(other, AnyType) or isinstance(other, VoidType)
 
     def bypass(self):
         return True

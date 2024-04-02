@@ -266,6 +266,9 @@ class TypeChecker:
         
         expr_type: Type = self.visit(node.expr, initialization_scope)
         
+        if attr.type == AnyType():
+            attr.type = expr_type
+        
         if not expr_type.conforms_to(attr.type):
             self.errors.append(INVALID_TYPE_CONVERSION % (expr_type.name, attr.type.name))
         
@@ -274,6 +277,21 @@ class TypeChecker:
     @visitor.when(MethDeclarationNode)
     def visit(self, node: MethDeclarationNode, scope: Scope = None):
         self.current_method = self.current_type.get_method(node.id)
+        
+        fun_scope = scope.create_child()
+        
+        for param, type in zip(self.current_method.param_names, self.current_method.param_types):
+            fun_scope.define_variable(param, type)
+        
+        s_type = None
+        for i, statement in enumerate(node.body):
+            s_type = self.visit(statement, fun_scope)
+            if i == len(node.body) - 1 and self.current_method != VoidType() \
+                and not s_type.conforms_to(self.current_method.return_type):
+                self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type))
+        
+        if self.current_method.return_type == AnyType() and s_type is not None:
+            self.current_method.return_type = s_type
         
         if self.current_type.parent is not None:
             try:
@@ -286,17 +304,6 @@ class TypeChecker:
                     self.errors.append(WRONG_SIGNATURE % (node.id, self.current_type.name))
             except SemanticError:
                 pass
-        
-        fun_scope = scope.create_child()
-        
-        for param, type in zip(self.current_method.param_names, self.current_method.param_types):
-            fun_scope.define_variable(param, type)
-        
-        for i, statement in enumerate(node.body):
-            s_type = self.visit(statement, fun_scope)
-            if i == len(node.body) - 1 and self.current_method != VoidType() \
-                and not s_type.conforms_to(self.current_method.return_type):
-                self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type.name))
         
         ret_type = self.current_method.return_type
         
@@ -333,7 +340,7 @@ class TypeChecker:
             self.visit(assig, current_scope)
         
         for i, expr in enumerate(node.expr):
-            expr_type = self.visit(node.expr, current_scope)
+            expr_type = self.visit(expr, current_scope)
             if i == len(node.expr) - 1:
                 return expr_type
     
@@ -342,13 +349,17 @@ class TypeChecker:
         expr_type: Type = self.visit(node.expr, scope.create_child())
         
         if node.type is None:
-            var_type = AnyType()
+            var_type = expr_type
         else:
             try:
                 var_type = self.context.get_type(node.type)
             except SemanticError as e:
                 self.errors.append(e.text)
                 var_type = ErrorType()
+       
+        if expr_type == VoidType():
+            self.errors.append(CANT_ASSIGN_TO_VOID)
+            return ErrorType()
        
         if not expr_type.conforms_to(var_type):
             self.errors.append(INVALID_TYPE_CONVERSION % (expr_type.name, var_type.name))
@@ -375,7 +386,6 @@ class TypeChecker:
                 return ErrorType()
 
         expr_type = self.visit(node.expr, scope.create_child())
-        
         if node.id == "self" and not scope.is_defined("self"):
             self.errors.append(SELF_IS_READONLY)
             return ErrorType()
@@ -457,7 +467,7 @@ class TypeChecker:
             self.errors.append(INVALID_TYPE_CONVERSION % (cond_type.name, BooleanType().name))
             
         expr_scope = scope.create_child()
-        for i, expr in node.expr:
+        for i, expr in enumerate(node.expr):
             expr_type = self.visit(expr, expr_scope)
             if i == len(node.expr) - 1:
                 return expr_type
@@ -469,7 +479,7 @@ class TypeChecker:
             self.errors.append(INVALID_TYPE_CONVERSION % (cond_type.name, BooleanType().name))
             
         expr_scope = scope.create_child()
-        for i, expr in node.expr:
+        for i, expr in enumerate(node.expr):
             expr_type = self.visit(expr, expr_scope)
             if i == len(node.expr) - 1:
                 return expr_type
@@ -477,7 +487,7 @@ class TypeChecker:
     @visitor.when(ElseNode)
     def visit(self, node: ElseNode, scope: Scope = None):
         expr_scope = scope.create_child()
-        for i, expr in node.expr:
+        for i, expr in enumerate(node.expr):
             expr_type = self.visit(expr, expr_scope)
             if i == len(node.expr) - 1:
                 return expr_type
@@ -489,7 +499,7 @@ class TypeChecker:
             self.errors.append(INVALID_TYPE_CONVERSION % (cond_type.name, BooleanType().name))
             
         expr_scope = scope.create_child()
-        for i, expr in node.expr:
+        for i, expr in enumerate(node.expr):
             expr_type = self.visit(expr, expr_scope)
             if i == len(node.expr) - 1:
                 return expr_type
@@ -505,20 +515,24 @@ class TypeChecker:
             
         expr_scope.define_variable(node.var, AnyType())
             
-        for i, expr in node.expr:
+        for i, expr in enumerate(node.expr):
             expr_type = self.visit(expr, expr_scope)
             if i == len(node.expr) - 1:
                 return expr_type
             
     @visitor.when(AsNode)
     def visit(self, node: AsNode, scope: Scope = None):
+        expr_type = self.visit(node.expr, scope.create_child())
+        
         try:
-            as_type = self.context.get_type(node.type)
+            if not isinstance(node.type, VariableNode):
+                self.errors.append(INVALID_AS_EXPRESSION % (expr_type, node.type))
+                as_type = ErrorType()
+            else:
+                as_type = self.context.get_type(node.type.lex)
         except SemanticError as e:
             self.errors.append(e.text)
             as_type = ErrorType()
-        
-        expr_type = self.visit(node.expr, scope.create_child())
         
         if not as_type.conforms_to(expr_type):
             self.errors.append(INVALID_AS_EXPRESSION % (expr_type.name, as_type.name))
@@ -542,7 +556,7 @@ class TypeChecker:
         if not scope.is_defined(node.lex):
             if self.current_type is not None and self.current_method is not None \
                 and node.lex == "self":
-                    return self.current_type
+                return self.current_type
             
             constants_types = hulk_builtins.get_builtin_constants()
             if node.lex in constants_types:
@@ -551,11 +565,12 @@ class TypeChecker:
             self.errors.append(VARIABLE_NOT_DEFINED % node.lex)
             return ErrorType()
         
-        return scope.find_variable(node.lex).type
+        var = scope.find_variable(node.lex)
+        return var.type
     
     @visitor.when(AttributeNode)
     def visit(self, node: AttributeNode, scope: Scope = None):
-        if node.left_id != "self":
+        if not isinstance(node.left_id, VariableNode) or node.left_id.lex != "self":
             self.errors.append(INVALID_ATTRIBUTE_INVOCATION)
             return ErrorType()
 
