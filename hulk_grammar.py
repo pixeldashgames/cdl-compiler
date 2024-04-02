@@ -50,8 +50,8 @@ def_type %= typex + idx + ocur + abstract_feature_list + ccur, lambda h, s: ast.
 def_type %= typex + idx + opar + param_list + cpar + inher + idx + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(
     s[2], s[4], s[9], [], s[7])
 def_type %= typex + idx + inher + idx + ocur + abstract_feature_list + ccur, lambda h, s: ast.TypeDeclarationNode(s[2],[],s[6],[],s[4])
-def_type %= typex + idx + opar + param_list + cpar + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h, s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[9], s[7])
-def_type %= typex + idx + inher + idx + opar + abst_param_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(
+def_type %= typex + idx + opar + param_list + cpar + inher + idx + opar + abst_arg_list + cpar + ocur + abstract_feature_list + ccur, lambda h, s: ast.TypeDeclarationNode(s[2], s[4], s[12], s[9], s[7])
+def_type %= typex + idx + inher + idx + opar + abst_arg_list + cpar + ocur + abstract_feature_list + ccur, lambda h,s: ast.TypeDeclarationNode(
     s[2], [], s[9], s[6], s[4])
 
 abstract_feature_list %= feature_list, lambda h, s: s[1]
@@ -73,7 +73,7 @@ def_meth %= idx + opar + abst_param_list + cpar + ocur + abst_expr_list + ccur, 
     s[1], s[3], s[6])
 def_meth %= idx + opar + abst_param_list + cpar + colon + idx + rarrow + expr + semi, lambda h,s: ast.MethDeclarationNode(
     s[1], s[3], [s[8]], s[6])
-def_meth %= idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,s: ast.FuncDeclarationNode(
+def_meth %= idx + opar + abst_param_list + cpar + colon + idx + ocur + abst_expr_list + ccur, lambda h,s: ast.MethDeclarationNode(
     s[1], s[3], s[8], s[6])
 
 def_func %= fun + idx + opar + abst_param_list + cpar + rarrow + expr + semi, lambda h, s: ast.FuncDeclarationNode(s[2],s[4],[s[7]])

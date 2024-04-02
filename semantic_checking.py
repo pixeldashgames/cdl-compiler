@@ -5,42 +5,37 @@ from errors import *
 import hulk_builtins
 
 
-def run_semantic_checker(ast) -> bool:
+def run_semantic_checker(ast, verbose = False) -> tuple[list[str], bool]:
     errors = []
-    found_errors = False
     
-    print('============== COLLECTING TYPES ===============')
     collector = TypeCollector(errors)
     collector.visit(ast)
     context = collector.context
-    print('Type collection errors:\n', "\n".join(errors))
-    print('Context:')
-    print(context)
     
-    if errors:
-        found_errors = True
-    
-    print('=============== BUILDING TYPES ================')
+    if verbose :
+        print('Type collection errors:\n', "\n".join(errors))
+        print('Context:')
+        print(context)
+        
     builder = TypeBuilder(context, errors)
     builder.visit(ast)
-    print('Type building errors:\n', "\n".join(errors))
-    print('Context:')
-    print(context)
     
-    if errors:
-        found_errors = True
+    if verbose :
+        print('Type building errors:\n', "\n".join(errors))
+        print('Context:')
+        print(context)
+    
         
-    print('=============== CHECKING TYPES ================')
     checker = TypeChecker(context, errors)
     checker.visit(ast)
-    print('Type checking errors:\n', "\n".join(errors))
-    print('Context:')
-    print(context)
     
-    if errors:
-        found_errors = True
+    if verbose :
+        print('Type checking errors:\n', "\n".join(errors))
+        print('Context:')
+        print(context)
+    
         
-    return context if not found_errors else None
+    return errors, context
 
 
 class TypeCollector:
@@ -219,13 +214,19 @@ class TypeChecker:
     @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode, scope: Scope = None):
         scope = Scope()
-        for d in node.declarations:
-            if getattr(d, "__iter__", None) is not None:
-                entry_scope = scope.create_child()
-                for st in d:
-                    self.visit(st, entry_scope)
-            else:
-                self.visit(d, scope.create_child())
+        global_funcs = [d for d in node.declarations if isinstance(d, FuncDeclarationNode)]
+        type_defs = [d for d in node.declarations if isinstance(d, TypeDeclarationNode)]
+        entry = [d for d in node.declarations if getattr(d, "__iter__", None) is not None][0]
+        
+        for f in global_funcs:
+            self.visit(f, scope.create_child())
+        
+        for t in type_defs:
+            self.visit(t, scope.create_child())
+            
+        entry_scope = scope.create_child()
+        for e in entry:
+            self.visit(e, entry_scope)
             
     @visitor.when(TypeDeclarationNode)
     def visit(self, node: TypeDeclarationNode, scope: Scope = None):
@@ -249,8 +250,14 @@ class TypeChecker:
         
         class_scope: Scope = scope.create_child()
         
-        for f in node.features:
-            self.visit(f, class_scope)
+        attr_defs = [f for f in node.features if isinstance(f, AttrDeclarationNode)]
+        method_defs = [f for f in node.features if isinstance(f, MethDeclarationNode)]
+        
+        for a in attr_defs:
+            self.visit(a, class_scope)
+        
+        for m in method_defs:
+            self.visit(m, class_scope)
         
         self.current_type = None
         
@@ -320,11 +327,15 @@ class TypeChecker:
         for param, type in zip(self.current_method.param_names, self.current_method.param_types):
             fun_scope.define_variable(param, type)
         
+        s_type = None
         for i, statement in enumerate(node.body):
             s_type = self.visit(statement, fun_scope)
             if i == len(node.body) - 1 and self.current_method.return_type != VoidType() \
                 and not s_type.conforms_to(self.current_method.return_type):
-                self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type.name))
+                self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type))
+        
+        if self.current_method.return_type == AnyType() and s_type is not None:
+            self.current_method.return_type = s_type
         
         ret_type = self.current_method.return_type
         

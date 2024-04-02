@@ -1,28 +1,47 @@
-type Animal(name: String) {
+type Animal(name: String, age: Number) {
     name: String = name;
+    age = age;
 
     make_sound() {
         print("Hello, I am a generic animal and my name is" @@ self.name);
     }
+
+    get_age() : Number {
+        self.age;
+    }
 }
 
-type Macaco inherits Animal {
+type Macaco(name: String, age: Number) inherits Animal("Macaco" @@ name @@ "lvl." @ age, age) {
     make_sound() {
-        print("Hello, I am a civilized maca- I mean human, and my name is" @@ self.name);
+        print("Hello, I am a civilized maca- I mean human and I'm" @@ self.get_age() @@"years old, and my name is" @@ 
+            self.name @ ", I'm so civilized I can even do the fibonacci sequence, look:");
+        print_fibo(10);
     }
 }
 
 function fibo(n: Number): Number
     => if (n == 0) 1 elif (n == 1) 1 else fibo(n-1) + fibo(n-2);
 
-{
-    let n = 0 in while(n <= 10) {
-        print(fibo(n));
-        n := n + 1;
-    };
+function print_fibo(n: Number) {
+    let str = "", i = 1 in {
+        str := "" @ fibo(0);
 
-    let a: Animal = new Macaco("Alfredo"), b = a as Macaco in {
+        while (i <= n) {
+            str := str @ ", " @ fibo(i);
+            i := i + 1;
+        };
+
+        print(str);
+    };
+}
+
+{
+    let a: Animal = new Macaco("Leo", 22), b = a as Macaco in {
         a.make_sound();
         b.make_sound();
+        if (a is Macaco)
+            print("To be Macaco")
+        else
+            print("Not to be Macaco");
     };
 }

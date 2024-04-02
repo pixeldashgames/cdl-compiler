@@ -9,34 +9,41 @@ import sys
 
 
 class Hulk:
-    def __init__(self, lexer_eof, parser_grammar):
-        self.lexer = Lexer(regex_table, lexer_eof)
-        self.parser = LR1Parser(parser_grammar, True)  # Running this it raises a conflict error
+    def __init__(self, lexer_eof, parser_grammar, verbose = False):
+        self.verbose = verbose
+        self.lexer = Lexer(regex_table, lexer_eof, verbose)
+        self.parser = LR1Parser(parser_grammar, verbose)  
+# Running this it raises a conflict error
 
-    def build_ast(self, text, verbose=False):
-        print("Building AST")
+    def build_ast(self, text):
+        if self.verbose:
+            print("Building AST")
         tokens = self.lexer(text)
-        print(tokens)
-        # --------------------------------------------------------------------------------------
-        # Parser start here --------------------------------------------------------------------
-        # --------------------------------------------------------------------------------------
+        if self.verbose:
+            print(tokens)
         right_parse, operations = self.parser([t.token_type for t in tokens])
         ast = evaluate_reverse_parse(right_parse, operations, tokens)
         return ast
 
     @staticmethod
-    def run(code: str):
-        hulk = Hulk(hulk_grammar.HG.EOF, hulk_grammar.HG)
+    def run(code: str, verbose = False):
+        hulk = Hulk(hulk_grammar.HG.EOF, hulk_grammar.HG, verbose)
         ast = hulk.build_ast(code)
-        context = run_semantic_checker(ast)
-        if context:
-            print("Semantic check passed")
-        else:
-            print("Semantic check failed")
+        errors, context = run_semantic_checker(ast, verbose)
+        if errors:
+            print("Errors found at compile-time!")
+            for e in errors:
+                print(e)
             return
+        
         interpreter_collector = InterpreterCollector(context)
         interpreter_collector.visit(ast)
-        ast.evaluate(context, interpreter_collector.interpreter_context)
+        
+        try:
+            ast.evaluate(context, interpreter_collector.interpreter_context)
+        except RuntimeError as e:
+            print("Error found at runtime!")
+            print(e.args[0])
 
 
 if __name__ == '__main__':

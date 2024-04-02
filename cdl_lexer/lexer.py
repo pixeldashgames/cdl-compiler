@@ -16,14 +16,18 @@ def _build_regexs(table):
 
 
 class Lexer:
-    def __init__(self, table, eof):
+    def __init__(self, table, eof, verbose = False):
         self.eof = eof
-        print("build_regex start")
+        if verbose:
+            print("build_regex start")
         self.regexs = _build_regexs(table)
-        print("build_regex done")
-        print("build_automaton start")
+        if verbose:
+            print("build_regex done")
+        if verbose:
+            print("build_automaton start")
         self.automaton = self._build_automaton()
-        print("build_automaton done")
+        if verbose:
+            print("build_automaton done")
 
     def _build_automaton(self):
         start = State('start')
@@ -44,6 +48,8 @@ class Lexer:
                     final = state
                     final_lex = lex
             else:
+                if final_lex == '':
+                    print("breaking at", symbol)
                 break
 
         return final, final_lex
@@ -53,7 +59,7 @@ class Lexer:
             text = text.lstrip()
             final, lex = self._walk(text)
             if final is None:
-                yield lex, self.eof
+                print(final,"-><-", lex, "-><-", text)
                 break
             final_tag = min(final.tag, key=lambda x: x[0])
             yield lex, final_tag[1]
