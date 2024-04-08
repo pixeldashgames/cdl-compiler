@@ -262,17 +262,16 @@ class AssignNode(ExpressionNode):
         return self.expr.evaluate(semantic_context, context, scope)
 
 class DesAssignNode(ExpressionNode):
-    def __init__(self, idx, expr, attr_id = None):
+    def __init__(self, idx, expr):
         self.id = idx
         self.expr = expr
-        self.attr_id = attr_id
 
     def evaluate(self, semantic_context: Context, context: InterpreterContext, scope: InterpreterScope):
         expr_value = self.expr.evaluate(semantic_context, context, scope)
         
-        if self.attr_id is not None:
+        if isinstance(self.id, AttributeNode):
             var_value = scope.self_var[1]
-            var_value[self.id] = Variable(self.id, var_value[self.id].type, expr_value.value, expr_value.value_type)
+            var_value.value[self.id.right_id] = Variable(self.id.right_id, var_value.value[self.id.right_id].type, expr_value.value, expr_value.value_type)
             scope.self_var = (scope.self_var[0], var_value, scope.self_var[2])
             return expr_value
 

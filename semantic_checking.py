@@ -385,21 +385,22 @@ class TypeChecker:
     
     @visitor.when(DesAssignNode)
     def visit(self, node: DesAssignNode, scope: Scope = None):
-        if node.attr_id is not None and node.id != "self":
+        if isinstance(node.id, AttributeNode) and (not isinstance(node.id.left_id, VariableNode) or node.id.left_id.lex != "self"):
             self.errors.append(INVALID_ATTRIBUTE_INVOCATION)
             return ErrorType()
 
         expr_type = self.visit(node.expr, scope.create_child())
 
-        if node.attr_id is not None:
+        if isinstance(node.id, AttributeNode):
             if self.current_type is None:
                 self.errors.append(INVALID_ATTRIBUTE_INVOCATION)
                 return ErrorType()
             try:
-                attr = self.current_type.get_attribute(node.right_id)
+                attr = self.current_type.get_attribute(node.id.right_id)
                 
                 if not expr_type.conforms_to(attr.type):
                     self.errors.append(INVALID_TYPE_CONVERSION % (expr_type.name, attr.type.name))
+                
                 return attr.type
             except SemanticError as e:
                 self.errors.append(e.text)

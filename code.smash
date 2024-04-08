@@ -6,6 +6,9 @@ type Animal(name: String, age: Number) {
         print("Hello, I am a generic animal and my name is" @@ self.name);
     }
 
+    set_name(name: String) =>
+        self.name := name;
+
     get_age() : Number {
         self.age;
     }
@@ -27,7 +30,6 @@ function fibo(n: Number): Number
 function print_fibo(n: Number) {
     let str = "", i = 1 in {
         str := "" @ fibo(0);
-        self.var := value
         
         while (i <= n) {
             str := str @ ", " @ fibo(i);
@@ -41,6 +43,7 @@ function print_fibo(n: Number) {
 {
     let a: Animal = new Macaco("Leo", 22), b = a as Macaco in {
         a.make_sound();
+        b.set_name("Alfredo");
         b.make_sound();
         if (a is Macaco)
             print("To be Macaco")
