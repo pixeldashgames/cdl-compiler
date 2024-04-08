@@ -11,7 +11,7 @@ type Animal(name: String, age: Number) {
     }
 }
 
-type Macaco(name: String, age: Number) inherits Animal("Macaco" @@ name @@ "lvl." @ age, age) {
+type Macaco(name: String, age: Number) inherits Bitch("Macaco" @@ name @@ "lvl." @ age, age) {
     make_sound() {
         base();
         

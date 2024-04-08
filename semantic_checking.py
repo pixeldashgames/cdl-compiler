@@ -97,18 +97,24 @@ class TypeBuilder:
             self.current_type.args.append((arg.id, arg_type))
         
         if node.parent is not None:
-            parent_type = self.context.get_type(node.parent)
+            parent_exists = True
+            try:
+                parent_type = self.context.get_type(node.parent)
+            except SemanticError as e:
+                self.errors.append(e.text)
+                parent_exists = False
             
-            if node.p_params:
-                self.current_type.constructed_parent = True
-            
-            if not parent_type.can_be_inherited_from:
-                self.errors.append(INVALID_INHERITANCE % node.parent)
-            else:
-                try:
-                    self.current_type.set_parent(parent_type)
-                except SemanticError as e:
-                    self.errors.append(e.text)
+            if parent_exists:
+                if node.p_params:
+                    self.current_type.constructed_parent = True
+                
+                if not parent_type.can_be_inherited_from:
+                    self.errors.append(INVALID_INHERITANCE % node.parent)
+                else:
+                    try:
+                        self.current_type.set_parent(parent_type)
+                    except SemanticError as e:
+                        self.errors.append(e.text)
         
         for f in node.features:
             self.visit(f)
@@ -179,9 +185,7 @@ class TypeBuilder:
         try:
             self.context.add_global_function(node.id, param_names, param_types, return_type)
         except SemanticError as e:
-            self.errors.append(e.text)
-    
-    
+            self.errors.append(e.text) 
     
     @visitor.when(AttrDeclarationNode)
     def visit(self, node: AttrDeclarationNode):
