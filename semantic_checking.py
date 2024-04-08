@@ -438,14 +438,14 @@ class TypeChecker:
         if self.current_method is not None and self.current_type is not None \
             and self.current_type.parent is not None and node.id == "base" and len(node.args) == 0:
                 try:
-                    self.current_type.parent.get_method(node.id)
-                    return self.current_type.parent
+                    m = self.current_type.parent.get_method(self.current_method.name)
+                    return m.return_type
                 except SemanticError as e:
                     pass
         
         try:
             method: Method = self.context.get_global_function(node.id)
-        except SemanticError as e:
+        except SemanticError as e:            
             self.errors.append(e.text)
             return ErrorType()
         
