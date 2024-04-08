@@ -38,7 +38,7 @@ class Type:
     def __init__(self, name:str):
         self.name = name
         self.attributes = []
-        self.args: list[tuple[str, type]] = []
+        self.args: list[tuple[str, Type]] = []
         self.constructed_parent: bool = False
         self.methods = []
         self.parent = None
