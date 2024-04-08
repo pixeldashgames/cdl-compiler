@@ -297,7 +297,7 @@ class TypeChecker:
         s_type = None
         for i, statement in enumerate(node.body):
             s_type = self.visit(statement, fun_scope)
-            if i == len(node.body) - 1 and self.current_method != VoidType() \
+            if i == len(node.body) - 1 and self.current_method.return_type != VoidType() \
                 and not s_type.conforms_to(self.current_method.return_type):
                 self.errors.append(INVALID_TYPE_CONVERSION % (s_type.name, node.type))
         
