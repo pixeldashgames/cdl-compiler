@@ -27,7 +27,8 @@ function fibo(n: Number): Number
 function print_fibo(n: Number) {
     let str = "", i = 1 in {
         str := "" @ fibo(0);
-
+        self.var := value
+        
         while (i <= n) {
             str := str @ ", " @ fibo(i);
             i := i + 1;
@@ -41,7 +42,7 @@ function print_fibo(n: Number) {
     let a: Animal = new Macaco("Leo", 22), b = a as Macaco in {
         a.make_sound();
         b.make_sound();
-        if (a is String)
+        if (a is Macaco)
             print("To be Macaco")
         else
             print("Not to be Macaco");

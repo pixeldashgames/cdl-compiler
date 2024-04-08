@@ -389,18 +389,22 @@ class TypeChecker:
             self.errors.append(INVALID_ATTRIBUTE_INVOCATION)
             return ErrorType()
 
+        expr_type = self.visit(node.expr, scope.create_child())
+
         if node.attr_id is not None:
             if self.current_type is None:
                 self.errors.append(INVALID_ATTRIBUTE_INVOCATION)
                 return ErrorType()
             try:
                 attr = self.current_type.get_attribute(node.right_id)
+                
+                if not expr_type.conforms_to(attr.type):
+                    self.errors.append(INVALID_TYPE_CONVERSION % (expr_type.name, attr.type.name))
                 return attr.type
             except SemanticError as e:
                 self.errors.append(e.text)
                 return ErrorType()
 
-        expr_type = self.visit(node.expr, scope.create_child())
         if node.id == "self" and not scope.is_defined("self"):
             self.errors.append(SELF_IS_READONLY)
             return ErrorType()
