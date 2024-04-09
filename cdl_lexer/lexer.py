@@ -55,16 +55,22 @@ class Lexer:
         return final, final_lex
 
     def _tokenize(self, text):
+        line = 1
         while text:
+            for c in text:
+                if not c.isspace():
+                    break
+                if c == '\n':
+                    line += 1
             text = text.lstrip()
             final, lex = self._walk(text)
             if final is None:
                 print(final,"-><-", lex, "-><-", text)
                 break
             final_tag = min(final.tag, key=lambda x: x[0])
-            yield lex, final_tag[1]
+            yield lex, final_tag[1], line
             text = text[len(lex):]
-        yield '$', self.eof
+        yield '$', self.eof, line
 
     def __call__(self, text):
-        return [Token(lex, ttype) for lex, ttype in self._tokenize(text)]
+        return [Token(lex, ttype, line) for lex, ttype, line in self._tokenize(text)]

@@ -26,7 +26,8 @@ class ShiftReduceParser:
 
         while True:
             state = stack[-1]
-            lookahead = w[cursor]
+            lookahead = w[cursor].token_type
+            lookahead_line = w[cursor].line
             if self.verbose: print(stack, '<---||--->', w[cursor:])
 
             try:
@@ -36,7 +37,7 @@ class ShiftReduceParser:
                 # actions
                 actions = {k[1] for k in self.action if k[0] == state}
                 raise Exception(
-                    f"Unexpected token {lookahead} on cursor {cursor}, expected one of {actions}")
+                    f"Unexpected token {lookahead} on line {lookahead_line}, expected one of {actions}")
             if action == ShiftReduceParser.SHIFT:
                 stack.append(lookahead)
                 stack.append(tag)

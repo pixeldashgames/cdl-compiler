@@ -14,7 +14,7 @@ abst_param_list, empty_param_list = HG.non_terminals('<abst-param-list> <empty-p
 abst_arg_list, empty_arg_list = HG.non_terminals('<abst-arg-list> <empty-arg-list>')
 param, arith, term, factor, atom, atrib = HG.non_terminals('<parameter> <arith> <term> <factor> <atom> <atrib>')
 boolean, b_or, b_and, b_not, b_rel, prop = HG.non_terminals('<boolean> <ors> <ands> <nots> <relation> <proposition')
-cond, loop, conct_expr, as_expr = HG.non_terminals('<conditional> <loop> <conct> <as-expr>')
+cond, loop, conct_expr, as_expr, power_expr = HG.non_terminals('<conditional> <loop> <conct> <as-expr> <power-expr>')
 func_call, meth_call, def_meth, def_attr = HG.non_terminals('<func-call> <meth-call> <def_meth> <def-attr>')
 feature_list, abstract_feature_list, empty_feature_list = HG.non_terminals(
     '<feature-list> <abstract-feature-list> <empty-feature-list>')
@@ -171,11 +171,14 @@ arith %= term, lambda h, s: s[1]
 term %= term + star + factor, lambda h, s: ast.StarNode(s[1], s[3])
 term %= term + div + factor, lambda h, s: ast.DivNode(s[1], s[3])
 term %= term + congr + factor, lambda h, s: ast.CongruenceNode(s[1], s[3])
-term %= factor, lambda h, s: s[1]
+term %= power_expr, lambda h, s: s[1]
+
+power_expr %= factor, lambda h, s: s[1]
+power_expr %= factor + power + power_expr, lambda h, s: ast.PowerNode(s[1], s[3])
 
 factor %= as_expr, lambda h, s: s[1]
-factor %= as_expr + power + factor, lambda h, s: ast.PowerNode(s[1], s[3])
-factor %= opar + arith + cpar, lambda h, s: s[2]
+# factor %= as_expr + power + factor, lambda h, s: ast.PowerNode(s[1], s[3])
+factor %= opar + expr + cpar, lambda h, s: s[2]
 
 as_expr %= as_expr + asx + atom, lambda h, s: ast.AsNode(s[1], s[3])
 as_expr %= atom, lambda h, s: s[1]

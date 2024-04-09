@@ -291,7 +291,8 @@ class MethCallNode(ExpressionNode):
             var = scope.find_variable(self.obj.lex)
             if var:
                 save_to_var = self.obj.lex
-                var_type = var.type
+                # asda
+                var_type = var.underlaying_type
             elif self.obj.lex == "self":
                 save_to_var = self.obj.lex
                 var_type = scope.self_var[0]

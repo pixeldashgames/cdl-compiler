@@ -37,7 +37,7 @@ class InterpreterCollector:
         for f in node.features:
             self.visit(f)
         
-        if not self.interpreter_context.methods[self.current_type]:
+        if not self.interpreter_context.methods.get(self.current_type, None):
             return
         
         for name, method in self.interpreter_context.methods[self.current_type].items():

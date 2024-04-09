@@ -16,12 +16,17 @@ type Animal(name: String, age: Number) {
 
 type Macaco(name: String, age: Number) inherits Animal("Macaco" @@ name @@ "lvl." @ age, age) {
     make_sound() {
+        print_animal_age(self);
         base();
         
         print("Hello, I am a civilized maca- I mean human and I'm" @@ self.get_age() @@"years old, and my name is" @@ 
             self.name @ ", I'm so civilized I can even do the fibonacci sequence, look:");
         print_fibo(10);
     }
+}
+
+function print_animal_age(a: Animal) {
+    print(a.get_age());
 }
 
 function fibo(n: Number): Number

@@ -25,8 +25,8 @@ class Regex:
                 errors.append(f"Invalid character {c} on column {i}")
 
         tokens.append(self.grammar.EOF)
+        tokens = [Token(x.Name, x, 0) for x in tokens]
         derivation, operations = self.parser(tokens)
-        tokens = [Token(x.Name, x) for x in tokens]
         ast: Node = evaluate_reverse_parse(derivation, operations, tokens)
         return ast
 
